@@ -5,7 +5,15 @@ import {
 } from 'react-native';
 import { supabase } from '../../lib/supabase';
 
-const UNIDADES = ['g', 'kg', 'ml', 'L', 'un', 'tbsp', 'tsp', 'xic'];
+const UNIDADES = ['g', 'kg', 'ml', 'L', 'un'];
+
+function formatarCusto(valor: number, unidade: string): string {
+  // Unidades pequenas (g, ml) precisam de mais casas decimais
+  if ((unidade === 'g' || unidade === 'ml') && valor < 0.1) {
+    return valor.toFixed(4);
+  }
+  return valor.toFixed(2).replace('.', ',');
+}
 
 export default function InsumoFormScreen({ route, navigation }: any) {
   const editId: string | undefined = route.params?.id;
@@ -96,20 +104,21 @@ export default function InsumoFormScreen({ route, navigation }: any) {
           keyboardType="decimal-pad"
         />
 
-        <Text style={styles.label}>Quantidade na embalagem ({unidade})</Text>
+        <Text style={styles.label}>Quantidade total na embalagem ({unidade})</Text>
         <TextInput
           style={styles.input}
           value={qtdEmbalagem}
           onChangeText={setQtdEmbalagem}
-          placeholder="Ex: 1000"
+          placeholder={unidade === 'kg' ? 'Ex: 5 (para uma embalagem de 5kg)' : unidade === 'g' ? 'Ex: 1000 (para 1kg = 1000g)' : unidade === 'L' ? 'Ex: 1 (para 1 litro)' : unidade === 'ml' ? 'Ex: 500 (para 500ml)' : 'Ex: 10'}
           placeholderTextColor="#B08A78"
           keyboardType="decimal-pad"
         />
 
         {unitarioValido && (
           <View style={styles.preview}>
-            <Text style={styles.previewLabel}>Custo por {unidade}</Text>
-            <Text style={styles.previewValue}>R$ {(custo / qtd).toFixed(4)}</Text>
+            <Text style={styles.previewLabel}>Voce paga por cada {unidade}:</Text>
+            <Text style={styles.previewValue}>R$ {formatarCusto(custo / qtd, unidade)}</Text>
+            <Text style={styles.previewHint}>R$ {custo.toFixed(2).replace('.', ',')} dividido por {qtd}{unidade} = R$ {formatarCusto(custo / qtd, unidade)}/{unidade}</Text>
           </View>
         )}
 
@@ -145,8 +154,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#FEF0E8', borderRadius: 12, padding: 16,
     marginTop: 20, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
   },
-  previewLabel: { fontSize: 14, color: '#8A6A5A' },
-  previewValue: { fontSize: 18, fontWeight: '800', color: '#D45C2A' },
+  previewLabel: { fontSize: 13, color: '#8A6A5A', marginBottom: 4 },
+  previewValue: { fontSize: 26, fontWeight: '800', color: '#D45C2A', marginBottom: 4 },
+  previewHint: { fontSize: 12, color: '#B08A78', textAlign: 'right' },
   button: {
     backgroundColor: '#D45C2A', borderRadius: 12,
     padding: 16, alignItems: 'center', marginTop: 32,

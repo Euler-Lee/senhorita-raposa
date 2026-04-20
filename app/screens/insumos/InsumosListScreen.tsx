@@ -47,7 +47,11 @@ export default function InsumosListScreen({ navigation }: any) {
           <Text style={styles.empty}>Nenhum insumo cadastrado ainda.{'\n'}Adicione seus ingredientes e materiais.</Text>
         }
         renderItem={({ item }) => {
-          const unitario = Number(item.preco_custo) / Number(item.quantidade_embalagem);
+          const custoUnit = Number(item.preco_custo) / Number(item.quantidade_embalagem);
+          const un = item.unidade_medida;
+          const custoFormatado = ((un === 'g' || un === 'ml') && custoUnit < 0.1)
+            ? custoUnit.toFixed(4)
+            : custoUnit.toFixed(2).replace('.', ',');
           return (
             <View style={styles.card}>
               <TouchableOpacity
@@ -56,10 +60,10 @@ export default function InsumosListScreen({ navigation }: any) {
               >
                 <Text style={styles.nome}>{item.nome}</Text>
                 <Text style={styles.meta}>
-                  R$ {Number(item.preco_custo).toFixed(2)} / {Number(item.quantidade_embalagem).toFixed(0)} {item.unidade_medida}
+                  Embalagem: {Number(item.quantidade_embalagem).toFixed(0)}{item.unidade_medida} por R$ {Number(item.preco_custo).toFixed(2).replace('.', ',')}
                 </Text>
                 <Text style={styles.unitario}>
-                  Custo unitario: R$ {unitario.toFixed(4)}/{item.unidade_medida}
+                  R$ {custoFormatado} por {item.unidade_medida}
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.deleteBtn} onPress={() => handleDelete(item.id)}>
