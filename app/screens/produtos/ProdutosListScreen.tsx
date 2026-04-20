@@ -8,7 +8,6 @@ import { listarProdutosComCusto } from '../../lib/calculos';
 import { supabase } from '../../lib/supabase';
 import type { ProdutoComCusto } from '../../lib/types';
 import { colors, fontSize, fontWeight, radius, shadow, space } from '../../lib/theme';
-import { colors, fontSize, fontWeight, radius, shadow, space } from '../../lib/theme';
 
 export default function ProdutosListScreen({ navigation }: any) {
   const [produtos, setProdutos] = useState<ProdutoComCusto[]>([]);
