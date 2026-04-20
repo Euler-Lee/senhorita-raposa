@@ -7,7 +7,8 @@ import { useFocusEffect } from '@react-navigation/native';
 import { listarProdutosComCusto } from '../../lib/calculos';
 import { supabase } from '../../lib/supabase';
 import type { ProdutoComCusto } from '../../lib/types';
-import FoxBackground from '../../components/FoxBackground';
+import { colors, fontSize, fontWeight, radius, shadow, space } from '../../lib/theme';
+import { colors, fontSize, fontWeight, radius, shadow, space } from '../../lib/theme';
 
 export default function ProdutosListScreen({ navigation }: any) {
   const [produtos, setProdutos] = useState<ProdutoComCusto[]>([]);
@@ -108,32 +109,29 @@ export default function ProdutosListScreen({ navigation }: any) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#FFF8F4' },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FFF8F4' },
-  list: { padding: 16, paddingBottom: 90 },
-  emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 40 },
-  empty: { color: '#8A6A5A', fontSize: 16, textAlign: 'center', lineHeight: 24 },
+  container: { flex: 1, backgroundColor: colors.bg },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.bg },
+  list: { padding: space[4], paddingBottom: 90 },
+  emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: space[10] },
+  empty: { color: colors.text2, fontSize: fontSize.base, textAlign: 'center', lineHeight: 24 },
   card: {
-    backgroundColor: '#fff', borderRadius: 12, marginBottom: 12,
+    backgroundColor: colors.surface, borderRadius: radius.md, marginBottom: space[3],
     flexDirection: 'row', alignItems: 'stretch',
-    borderWidth: 1, borderColor: '#EDD9C8',
+    borderWidth: 1, borderColor: colors.border, ...shadow.xs,
   },
-  cardContent: { flex: 1, padding: 14 },
-  nome: { fontSize: 16, fontWeight: '700', color: '#2D1B10', marginBottom: 10 },
+  cardContent: { flex: 1, padding: space[4] },
+  nome: { fontSize: fontSize.base, fontWeight: fontWeight.bold, color: colors.text1, marginBottom: space[2] },
   row: { flexDirection: 'row', gap: 16 },
   stat: {},
-  statLabel: { fontSize: 11, color: '#8A6A5A', marginBottom: 2 },
-  statValue: { fontSize: 14, fontWeight: '700', color: '#2D1B10' },
-  success: { color: '#2E7D32' },
-  danger: { color: '#C0392B' },
+  statLabel: { fontSize: fontSize.xs, color: colors.text3, marginBottom: 2, textTransform: 'uppercase', letterSpacing: 0.4 },
+  statValue: { fontSize: fontSize.sm, fontWeight: fontWeight.bold, color: colors.text1 },
+  success: { color: colors.success },
+  danger: { color: colors.danger },
   actions: { flexDirection: 'column', justifyContent: 'center' },
-  editBtn: { flex: 1, width: 52, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FEF0E8' },
-  editTxt: { color: '#D45C2A', fontWeight: '700', fontSize: 11 },
-  deleteBtn: { flex: 1, width: 52, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FEE2E2', borderTopRightRadius: 12, borderBottomRightRadius: 12 },
-  deleteTxt: { color: '#C0392B', fontWeight: '800', fontSize: 16 },
-  fab: {
-    margin: 16, backgroundColor: '#D45C2A', borderRadius: 12,
-    padding: 16, alignItems: 'center',
-  },
-  fabText: { color: '#fff', fontSize: 16, fontWeight: '700' },
+  editBtn: { flex: 1, width: 52, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.primaryBg },
+  editTxt: { color: colors.primary, fontWeight: fontWeight.bold, fontSize: fontSize.xs },
+  deleteBtn: { flex: 1, width: 52, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.dangerBg, borderTopRightRadius: radius.md, borderBottomRightRadius: radius.md },
+  deleteTxt: { color: colors.danger, fontWeight: fontWeight.heavy, fontSize: fontSize.base },
+  fab: { margin: space[4], backgroundColor: colors.primary, borderRadius: radius.md, padding: space[4], alignItems: 'center', ...shadow.sm },
+  fabText: { color: '#fff', fontSize: fontSize.base, fontWeight: fontWeight.bold },
 });

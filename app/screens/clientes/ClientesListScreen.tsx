@@ -5,7 +5,7 @@ import {
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { supabase } from '../../lib/supabase';
-import type { Cliente } from '../../lib/types';
+import { colors, fontSize, fontWeight, radius, shadow, space } from '../../lib/theme';
 
 export default function ClientesListScreen({ navigation }: any) {
   const [clientes, setClientes] = useState<Cliente[]>([]);
@@ -85,32 +85,29 @@ export default function ClientesListScreen({ navigation }: any) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F4FBF9' },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F4FBF9' },
-  list: { padding: 16, paddingBottom: 90 },
-  emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 40 },
-  empty: { color: '#5A8A7A', fontSize: 16, textAlign: 'center', lineHeight: 24 },
+  container: { flex: 1, backgroundColor: colors.bg },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.bg },
+  list: { padding: space[4], paddingBottom: 90 },
+  emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: space[10] },
+  empty: { color: colors.text2, fontSize: fontSize.base, textAlign: 'center', lineHeight: 24 },
   card: {
-    backgroundColor: '#fff', borderRadius: 12, marginBottom: 12,
+    backgroundColor: colors.surface, borderRadius: radius.md, marginBottom: space[3],
     flexDirection: 'row', alignItems: 'stretch',
-    borderWidth: 1, borderColor: '#C8E6DF',
+    borderWidth: 1, borderColor: colors.border, ...shadow.xs,
   },
-  cardContent: { flex: 1, flexDirection: 'row', alignItems: 'center', padding: 14, gap: 12 },
+  cardContent: { flex: 1, flexDirection: 'row', alignItems: 'center', padding: space[4], gap: 12 },
   avatar: {
-    width: 40, height: 40, borderRadius: 20, backgroundColor: '#1A6B5A',
-    color: '#fff', fontSize: 18, fontWeight: '800', textAlign: 'center',
+    width: 40, height: 40, borderRadius: radius.full, backgroundColor: colors.green,
+    color: '#fff', fontSize: fontSize.md, fontWeight: fontWeight.heavy, textAlign: 'center',
     lineHeight: 40,
   },
-  nome: { fontSize: 16, fontWeight: '700', color: '#0D2B24' },
-  tel: { fontSize: 13, color: '#5A8A7A', marginTop: 2 },
+  nome: { fontSize: fontSize.base, fontWeight: fontWeight.bold, color: colors.text1 },
+  tel: { fontSize: fontSize.sm, color: colors.text2, marginTop: 2 },
   actions: { flexDirection: 'column' },
-  editBtn: { flex: 1, width: 52, justifyContent: 'center', alignItems: 'center', backgroundColor: '#E8F5F1' },
-  editTxt: { color: '#1A6B5A', fontWeight: '700', fontSize: 11 },
-  deleteBtn: { flex: 1, width: 52, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FEE2E2', borderTopRightRadius: 12, borderBottomRightRadius: 12 },
-  deleteTxt: { color: '#C0392B', fontWeight: '700', fontSize: 16 },
-  fab: {
-    margin: 16, backgroundColor: '#1A6B5A', borderRadius: 12,
-    padding: 16, alignItems: 'center',
-  },
-  fabText: { color: '#fff', fontSize: 16, fontWeight: '700' },
+  editBtn: { flex: 1, width: 52, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.greenBg },
+  editTxt: { color: colors.green, fontWeight: fontWeight.bold, fontSize: fontSize.xs },
+  deleteBtn: { flex: 1, width: 52, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.dangerBg, borderTopRightRadius: radius.md, borderBottomRightRadius: radius.md },
+  deleteTxt: { color: colors.danger, fontWeight: fontWeight.bold, fontSize: fontSize.base },
+  fab: { margin: space[4], backgroundColor: colors.green, borderRadius: radius.md, padding: space[4], alignItems: 'center', ...shadow.sm },
+  fabText: { color: '#fff', fontSize: fontSize.base, fontWeight: fontWeight.bold },
 });

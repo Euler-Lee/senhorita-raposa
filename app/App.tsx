@@ -7,6 +7,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Session } from '@supabase/supabase-js';
 import { supabase } from './lib/supabase';
+import { colors, headerStyle as hs } from './lib/theme';
 
 // Auth
 import LoginScreen from './screens/auth/LoginScreen';
@@ -46,29 +47,10 @@ const ProdutosStack = createNativeStackNavigator();
 const ClientesStack = createNativeStackNavigator();
 const FinanceiroStack = createNativeStackNavigator();
 
-const HEADER = {
-  headerStyle: { backgroundColor: '#FFF8F4' },
-  headerTintColor: '#D45C2A',
-  headerTitleStyle: { fontWeight: '700' as const },
-};
-
-const HEADER_VERDE = {
-  headerStyle: { backgroundColor: '#F4FBF9' },
-  headerTintColor: '#1A6B5A',
-  headerTitleStyle: { fontWeight: '700' as const },
-};
-
-const HEADER_AZUL = {
-  headerStyle: { backgroundColor: '#EFF5FA' },
-  headerTintColor: '#1A5A7A',
-  headerTitleStyle: { fontWeight: '700' as const },
-};
-
-const HEADER_ROXO = {
-  headerStyle: { backgroundColor: '#FAF4FF' },
-  headerTintColor: '#7A3A9A',
-  headerTitleStyle: { fontWeight: '700' as const },
-};
+const HEADER = hs.default;
+const HEADER_VERDE = hs.green;
+const HEADER_AZUL = hs.blue;
+const HEADER_ROXO = hs.purple;
 
 function HomeNavigator() {
   return (
@@ -130,10 +112,21 @@ function AppTabs() {
     <Tab.Navigator
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: '#D45C2A',
-        tabBarInactiveTintColor: '#8A6A5A',
-        tabBarStyle: { backgroundColor: '#fff', borderTopColor: '#EDD9C8' },
-        tabBarLabelStyle: { fontWeight: '600', fontSize: 11 },
+        tabBarActiveTintColor: colors.primary,
+        tabBarInactiveTintColor: colors.text3,
+        tabBarStyle: {
+          backgroundColor: colors.surface,
+          borderTopColor: colors.border,
+          borderTopWidth: 1,
+          height: 56,
+          paddingBottom: 6,
+          paddingTop: 6,
+        },
+        tabBarLabelStyle: {
+          fontWeight: '600',
+          fontSize: 10,
+          letterSpacing: 0.2,
+        },
       }}
     >
       <Tab.Screen name="HomeTab" component={HomeNavigator} options={{ title: 'Início' }} />

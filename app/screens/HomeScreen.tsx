@@ -1,11 +1,264 @@
 import React from 'react';
 import {
-  View, Text, TouchableOpacity, StyleSheet, ScrollView, StatusBar,
+  View, Text, TouchableOpacity, StyleSheet,
+  ScrollView, StatusBar, useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { supabase } from '../lib/supabase';
 import FoxBackground from '../components/FoxBackground';
 import AnimatedPressable from '../components/AnimatedPressable';
+import { colors, fontSize, fontWeight, space, radius, shadow } from '../lib/theme';
+
+// ─── Módulos ──────────────────────────────────────────────────────────────────
+const MODULES = [
+  {
+    key: 'ingredientes',
+    icon: '🥕',
+    label: 'Ingredientes',
+    desc: 'Matérias-primas e custo unitário',
+    accent: colors.fox,
+    bg: colors.foxBg,
+    border: colors.foxBorder,
+    tab: 'IngredientesTab',
+  },
+  {
+    key: 'embalagens',
+    icon: '📦',
+    label: 'Embalagens',
+    desc: 'Caixas, sacos e rótulos',
+    accent: colors.purple,
+    bg: colors.purpleBg,
+    border: colors.purpleBorder,
+    tab: 'EmbalagensTb',
+  },
+  {
+    key: 'produtos',
+    icon: '🍳',
+    label: 'Produtos',
+    desc: 'Fichas técnicas e precificação',
+    accent: colors.fox,
+    bg: '#FDE8D8',
+    border: '#F0BCA0',
+    tab: 'ProdutosTab',
+  },
+  {
+    key: 'clientes',
+    icon: '👥',
+    label: 'Clientes',
+    desc: 'Carteira e controle de pedidos',
+    accent: colors.green,
+    bg: colors.greenBg,
+    border: colors.greenBorder,
+    tab: 'ClientesTab',
+  },
+  {
+    key: 'financeiro',
+    icon: '📊',
+    label: 'Financeiro',
+    desc: 'Receita, recebimentos e pendências',
+    accent: colors.blue,
+    bg: colors.blueBg,
+    border: colors.blueBorder,
+    tab: 'FinanceiroTab',
+  },
+] as const;
+
+// ─── Componente ───────────────────────────────────────────────────────────────
+export default function HomeScreen({ navigation }: any) {
+  const { width } = useWindowDimensions();
+
+  // Breakpoints responsivos
+  const isDesktop = width >= 960;
+  const isTablet  = width >= 600;
+
+  const HPAD       = isDesktop ? 48 : 20;
+  const CARD_GAP   = isDesktop ? 16 : 12;
+  const NUM_COLS   = isDesktop ? 3 : 2;
+  const MAX_W      = 1140;
+
+  const innerWidth = Math.min(width, MAX_W) - HPAD * 2;
+  const cardW      = (innerWidth - CARD_GAP * (NUM_COLS - 1)) / NUM_COLS;
+
+  return (
+    <SafeAreaView style={s.safe} edges={['top']}>
+      <StatusBar barStyle="dark-content" backgroundColor={colors.bg} />
+      <FoxBackground opacity={0.028} />
+
+      <ScrollView
+        contentContainerStyle={[
+          s.scroll,
+          { paddingHorizontal: HPAD },
+          isDesktop && s.scrollDesktop,
+        ]}
+        showsVerticalScrollIndicator={false}
+      >
+
+        {/* ── Header ─────────────────────────────────────────── */}
+        <View style={[s.header, isTablet && s.headerTablet]}>
+          <View style={s.brand}>
+            <Text style={s.brandName}>Senhorita Raposa</Text>
+            <Text style={s.brandTag}>Precificação inteligente para o seu negócio</Text>
+          </View>
+          <TouchableOpacity
+            style={s.logoutBtn}
+            onPress={() => supabase.auth.signOut()}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Text style={s.logoutTxt}>Sair</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* ── Linha divisória ─────────────────────────────────── */}
+        <View style={s.divider} />
+
+        {/* ── Subtítulo ───────────────────────────────────────── */}
+        <Text style={[s.sectionLabel, isTablet && s.sectionLabelTablet]}>
+          Módulos do sistema
+        </Text>
+
+        {/* ── Grid de módulos ─────────────────────────────────── */}
+        <View style={[s.grid, { gap: CARD_GAP }]}>
+          {MODULES.map((m) => (
+            <AnimatedPressable
+              key={m.key}
+              style={[s.card, { width: cardW, backgroundColor: m.bg, borderColor: m.border }]}
+              onPress={() => navigation.navigate(m.tab)}
+            >
+              {/* Ícone */}
+              <View style={[s.iconWrap, { backgroundColor: m.accent + '18' }]}>
+                <Text style={s.iconEmoji}>{m.icon}</Text>
+              </View>
+
+              {/* Texto */}
+              <Text style={[s.cardTitle, { color: m.accent }]}>{m.label}</Text>
+              <Text style={s.cardDesc} numberOfLines={2}>{m.desc}</Text>
+
+              {/* Seta */}
+              <Text style={[s.cardArrow, { color: m.accent + 'AA' }]}>→</Text>
+            </AnimatedPressable>
+          ))}
+        </View>
+
+        {/* ── Rodapé sutil ────────────────────────────────────── */}
+        <Text style={s.footer}>🦊 Senhorita Raposa v1.0</Text>
+
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+// ─── Estilos ──────────────────────────────────────────────────────────────────
+const s = StyleSheet.create({
+  safe: { flex: 1, backgroundColor: colors.bg },
+
+  scroll: { paddingTop: space[5], paddingBottom: space[10] },
+  scrollDesktop: { alignSelf: 'center', width: '100%', maxWidth: 1140 },
+
+  // Header
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: space[5],
+  },
+  headerTablet: { alignItems: 'center' },
+
+  brand: { flex: 1, marginRight: space[4] },
+  brandName: {
+    fontSize: fontSize.xl,
+    fontWeight: fontWeight.black,
+    color: colors.primary,
+    letterSpacing: -0.5,
+  },
+  brandTag: {
+    fontSize: fontSize.sm,
+    color: colors.text2,
+    marginTop: 3,
+  },
+
+  logoutBtn: {
+    paddingVertical: 7,
+    paddingHorizontal: 14,
+    backgroundColor: colors.dangerBg,
+    borderRadius: radius.full,
+    borderWidth: 1,
+    borderColor: '#F5C8C0',
+  },
+  logoutTxt: {
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.bold,
+    color: colors.danger,
+  },
+
+  // Divisória
+  divider: {
+    height: 1,
+    backgroundColor: colors.border,
+    marginBottom: space[5],
+  },
+
+  sectionLabel: {
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.semibold,
+    color: colors.text3,
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    marginBottom: space[4],
+  },
+  sectionLabelTablet: { marginBottom: space[5] },
+
+  // Grid
+  grid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+  },
+
+  // Card
+  card: {
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    padding: space[4],
+    minHeight: 148,
+    ...shadow.sm,
+  },
+
+  iconWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: radius.md,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: space[3],
+  },
+  iconEmoji: { fontSize: 22 },
+
+  cardTitle: {
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.heavy,
+    marginBottom: 4,
+  },
+  cardDesc: {
+    fontSize: fontSize.xs,
+    color: colors.text2,
+    lineHeight: 16,
+    flex: 1,
+  },
+  cardArrow: {
+    fontSize: fontSize.md,
+    fontWeight: fontWeight.bold,
+    marginTop: space[2],
+    textAlign: 'right',
+  },
+
+  // Rodapé
+  footer: {
+    textAlign: 'center',
+    fontSize: fontSize.xs,
+    color: colors.text3,
+    marginTop: space[8],
+  },
+});
+
 
 type Bloco = {
   emoji: string;

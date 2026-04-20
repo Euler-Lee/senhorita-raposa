@@ -6,6 +6,7 @@ import {
 import { useFocusEffect } from '@react-navigation/native';
 import { supabase } from '../../lib/supabase';
 import type { Embalagem } from '../../lib/types';
+import { colors, fontSize, fontWeight, radius, shadow, space } from '../../lib/theme';
 
 export default function EmbalagensList({ navigation }: any) {
   const [embalagens, setEmbalagens] = useState<Embalagem[]>([]);
@@ -80,25 +81,25 @@ export default function EmbalagensList({ navigation }: any) {
 }
 
 const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#FAF4FF' },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FAF4FF' },
-  list: { padding: 16, paddingBottom: 90 },
-  emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 40 },
-  empty: { color: '#8A6AAA', fontSize: 16, textAlign: 'center', lineHeight: 24 },
+  container: { flex: 1, backgroundColor: colors.bg },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.bg },
+  list: { padding: space[4], paddingBottom: 90 },
+  emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: space[10] },
+  empty: { color: colors.text2, fontSize: fontSize.base, textAlign: 'center', lineHeight: 24 },
   card: {
-    backgroundColor: '#fff', borderRadius: 12, marginBottom: 12,
+    backgroundColor: colors.surface, borderRadius: radius.md, marginBottom: space[3],
     flexDirection: 'row', alignItems: 'stretch',
-    borderWidth: 1, borderColor: '#E0CCEA',
+    borderWidth: 1, borderColor: colors.border, ...shadow.xs,
   },
-  cardContent: { flex: 1, padding: 14 },
-  nome: { fontSize: 16, fontWeight: '700', color: '#2D1B3A', marginBottom: 4 },
-  meta: { fontSize: 13, color: '#8A6AAA' },
-  unitario: { fontSize: 12, color: '#7A3A9A', marginTop: 4, fontWeight: '600' },
+  cardContent: { flex: 1, padding: space[4] },
+  nome: { fontSize: fontSize.base, fontWeight: fontWeight.bold, color: colors.text1, marginBottom: 4 },
+  meta: { fontSize: fontSize.sm, color: colors.text2 },
+  unitario: { fontSize: fontSize.xs, color: colors.purple, marginTop: 4, fontWeight: fontWeight.semibold },
   deleteBtn: {
     width: 52, justifyContent: 'center', alignItems: 'center',
-    backgroundColor: '#FEE2E2', borderTopRightRadius: 12, borderBottomRightRadius: 12,
+    backgroundColor: colors.dangerBg, borderTopRightRadius: radius.md, borderBottomRightRadius: radius.md,
   },
-  deleteTxt: { color: '#C0392B', fontWeight: '800', fontSize: 16 },
-  fab: { margin: 16, backgroundColor: '#7A3A9A', borderRadius: 12, padding: 16, alignItems: 'center' },
-  fabText: { color: '#fff', fontSize: 16, fontWeight: '700' },
+  deleteTxt: { color: colors.danger, fontWeight: fontWeight.heavy, fontSize: fontSize.base },
+  fab: { margin: space[4], backgroundColor: colors.purple, borderRadius: radius.md, padding: space[4], alignItems: 'center', ...shadow.sm },
+  fabText: { color: '#fff', fontSize: fontSize.base, fontWeight: fontWeight.bold },
 });
