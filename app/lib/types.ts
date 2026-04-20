@@ -30,3 +30,26 @@ export type ProdutoComCusto = Produto & {
   lucro: number | null;
   margem_calculada: number | null;
 };
+
+export type Cliente = {
+  id: string;
+  user_id: string;
+  nome: string;
+  telefone: string | null;
+  criado_em: string;
+};
+
+export type Pedido = {
+  id: string;
+  user_id: string;
+  cliente_id: string;
+  produto_id: string | null;
+  descricao: string;
+  valor: number;
+  data_vencimento: string | null;
+  pago: boolean;
+  data_pagamento: string | null;
+  criado_em: string;
+  clientes?: Cliente;
+  produtos?: Produto;
+};
