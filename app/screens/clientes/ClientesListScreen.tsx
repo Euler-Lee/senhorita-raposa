@@ -1,15 +1,17 @@
 import React, { useState, useCallback } from 'react';
 import {
   View, Text, FlatList, TouchableOpacity,
-  StyleSheet, Alert, ActivityIndicator, Platform,
+  StyleSheet, ActivityIndicator,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { supabase } from '../../lib/supabase';
+import ConfirmDialog from '../../components/ConfirmDialog';
 import { colors, fontSize, fontWeight, radius, shadow, space } from '../../lib/theme';
 
 export default function ClientesListScreen({ navigation }: any) {
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [loading, setLoading] = useState(true);
+  const [confirmId, setConfirmId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -21,21 +23,14 @@ export default function ClientesListScreen({ navigation }: any) {
   useFocusEffect(load);
 
   async function handleDelete(id: string) {
-    if (Platform.OS === 'web') {
-      await supabase.from('clientes').delete().eq('id', id);
-      load();
-      return;
-    }
-    Alert.alert('Excluir cliente', 'Todos os pedidos deste cliente também serão excluídos.', [
-      { text: 'Cancelar', style: 'cancel' },
-      {
-        text: 'Excluir', style: 'destructive',
-        onPress: async () => {
-          await supabase.from('clientes').delete().eq('id', id);
-          load();
-        },
-      },
-    ]);
+    setConfirmId(id);
+  }
+
+  async function doDelete() {
+    if (!confirmId) return;
+    await supabase.from('clientes').delete().eq('id', confirmId);
+    setConfirmId(null);
+    load();
   }
 
   if (loading) {
@@ -80,6 +75,13 @@ export default function ClientesListScreen({ navigation }: any) {
       <TouchableOpacity style={styles.fab} onPress={() => navigation.navigate('ClienteForm')}>
         <Text style={styles.fabText}>+ Novo Cliente</Text>
       </TouchableOpacity>
+      <ConfirmDialog
+        visible={confirmId !== null}
+        title="Excluir cliente"
+        message="Todos os pedidos deste cliente também serão excluídos."
+        onConfirm={doDelete}
+        onCancel={() => setConfirmId(null)}
+      />
     </View>
   );
 }

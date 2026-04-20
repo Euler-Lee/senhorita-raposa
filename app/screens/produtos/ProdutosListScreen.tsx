@@ -1,17 +1,19 @@
 import React, { useState, useCallback } from 'react';
 import {
   View, Text, FlatList, TouchableOpacity,
-  StyleSheet, Alert, ActivityIndicator, Platform,
+  StyleSheet, ActivityIndicator,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { listarProdutosComCusto } from '../../lib/calculos';
 import { supabase } from '../../lib/supabase';
 import type { ProdutoComCusto } from '../../lib/types';
+import ConfirmDialog from '../../components/ConfirmDialog';
 import { colors, fontSize, fontWeight, radius, shadow, space } from '../../lib/theme';
 
 export default function ProdutosListScreen({ navigation }: any) {
   const [produtos, setProdutos] = useState<ProdutoComCusto[]>([]);
   const [loading, setLoading] = useState(true);
+  const [confirmId, setConfirmId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -23,21 +25,14 @@ export default function ProdutosListScreen({ navigation }: any) {
   useFocusEffect(load);
 
   async function handleDelete(id: string) {
-    if (Platform.OS === 'web') {
-      await supabase.from('produtos').delete().eq('id', id);
-      load();
-      return;
-    }
-    Alert.alert('Excluir produto', 'Esta ação não pode ser desfeita.', [
-      { text: 'Cancelar', style: 'cancel' },
-      {
-        text: 'Excluir', style: 'destructive',
-        onPress: async () => {
-          await supabase.from('produtos').delete().eq('id', id);
-          load();
-        },
-      },
-    ]);
+    setConfirmId(id);
+  }
+
+  async function doDelete() {
+    if (!confirmId) return;
+    await supabase.from('produtos').delete().eq('id', confirmId);
+    setConfirmId(null);
+    load();
   }
 
   if (loading) {
@@ -103,6 +98,13 @@ export default function ProdutosListScreen({ navigation }: any) {
       <TouchableOpacity style={styles.fab} onPress={() => navigation.navigate('ProdutoForm')}>
         <Text style={styles.fabText}>+ Novo Produto</Text>
       </TouchableOpacity>
+      <ConfirmDialog
+        visible={confirmId !== null}
+        title="Excluir produto"
+        message="Esta ação não pode ser desfeita."
+        onConfirm={doDelete}
+        onCancel={() => setConfirmId(null)}
+      />
     </View>
   );
 }

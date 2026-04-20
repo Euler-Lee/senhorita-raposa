@@ -1,16 +1,19 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import {
   View, Text, FlatList, TouchableOpacity,
-  StyleSheet, Alert, ActivityIndicator, Platform,
+  StyleSheet, ActivityIndicator,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { supabase } from '../../lib/supabase';
 import type { Pedido } from '../../lib/types';
+import ConfirmDialog from '../../components/ConfirmDialog';
 
 export default function ClienteDetalheScreen({ route, navigation }: any) {
   const { clienteId, nome } = route.params as { clienteId: string; nome: string };
   const [pedidos, setPedidos] = useState<Pedido[]>([]);
   const [loading, setLoading] = useState(true);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [confirmPagoId, setConfirmPagoId] = useState<Pedido | null>(null);
 
   useEffect(() => {
     navigation.setOptions({ title: nome });
@@ -39,29 +42,11 @@ export default function ClienteDetalheScreen({ route, navigation }: any) {
 
   function marcarPago(pedido: Pedido) {
     if (pedido.pago) return;
-    if (Platform.OS === 'web') {
-      executarPago(pedido.id);
-      return;
-    }
-    Alert.alert('Confirmar pagamento', `Marcar "${pedido.descricao}" como pago?`, [
-      { text: 'Cancelar', style: 'cancel' },
-      { text: 'Confirmar', onPress: () => executarPago(pedido.id) },
-    ]);
+    setConfirmPagoId(pedido);
   }
 
   async function handleDelete(id: string) {
-    if (Platform.OS === 'web') {
-      await supabase.from('pedidos').delete().eq('id', id);
-      load();
-      return;
-    }
-    Alert.alert('Excluir pedido', 'Esta ação não pode ser desfeita.', [
-      { text: 'Cancelar', style: 'cancel' },
-      {
-        text: 'Excluir', style: 'destructive',
-        onPress: async () => { await supabase.from('pedidos').delete().eq('id', id); load(); },
-      },
-    ]);
+    setConfirmDeleteId(id);
   }
 
   const totalGeral = pedidos.reduce((s, p) => s + Number(p.valor), 0);
@@ -133,6 +118,29 @@ export default function ClienteDetalheScreen({ route, navigation }: any) {
       >
         <Text style={s.fabText}>+ Novo Pedido</Text>
       </TouchableOpacity>
+      <ConfirmDialog
+        visible={confirmDeleteId !== null}
+        title="Excluir pedido"
+        message="Esta ação não pode ser desfeita."
+        onConfirm={async () => {
+          if (!confirmDeleteId) return;
+          await supabase.from('pedidos').delete().eq('id', confirmDeleteId);
+          setConfirmDeleteId(null);
+          load();
+        }}
+        onCancel={() => setConfirmDeleteId(null)}
+      />
+      <ConfirmDialog
+        visible={confirmPagoId !== null}
+        title="Confirmar pagamento"
+        message={`Marcar "${confirmPagoId?.descricao}" como pago?`}
+        confirmLabel="Confirmar"
+        onConfirm={() => {
+          if (confirmPagoId) executarPago(confirmPagoId.id);
+          setConfirmPagoId(null);
+        }}
+        onCancel={() => setConfirmPagoId(null)}
+      />
     </View>
   );
 }

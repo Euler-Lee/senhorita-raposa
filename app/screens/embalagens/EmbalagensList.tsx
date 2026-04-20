@@ -1,16 +1,18 @@
 import React, { useState, useCallback } from 'react';
 import {
   View, Text, FlatList, TouchableOpacity,
-  StyleSheet, Alert, ActivityIndicator, Platform,
+  StyleSheet, ActivityIndicator,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { supabase } from '../../lib/supabase';
 import type { Embalagem } from '../../lib/types';
+import ConfirmDialog from '../../components/ConfirmDialog';
 import { colors, fontSize, fontWeight, radius, shadow, space } from '../../lib/theme';
 
 export default function EmbalagensList({ navigation }: any) {
   const [embalagens, setEmbalagens] = useState<Embalagem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [confirmId, setConfirmId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -22,21 +24,14 @@ export default function EmbalagensList({ navigation }: any) {
   useFocusEffect(load);
 
   async function handleDelete(id: string) {
-    if (Platform.OS === 'web') {
-      await supabase.from('embalagens').delete().eq('id', id);
-      load();
-      return;
-    }
-    Alert.alert('Excluir embalagem', 'Esta ação não pode ser desfeita.', [
-      { text: 'Cancelar', style: 'cancel' },
-      {
-        text: 'Excluir', style: 'destructive',
-        onPress: async () => {
-          await supabase.from('embalagens').delete().eq('id', id);
-          load();
-        },
-      },
-    ]);
+    setConfirmId(id);
+  }
+
+  async function doDelete() {
+    if (!confirmId) return;
+    await supabase.from('embalagens').delete().eq('id', confirmId);
+    setConfirmId(null);
+    load();
   }
 
   if (loading) return <View style={s.center}><ActivityIndicator color="#7A3A9A" size="large" /></View>;
@@ -76,6 +71,13 @@ export default function EmbalagensList({ navigation }: any) {
       <TouchableOpacity style={s.fab} onPress={() => navigation.navigate('EmbalagemForm')}>
         <Text style={s.fabText}>+ Nova Embalagem</Text>
       </TouchableOpacity>
+      <ConfirmDialog
+        visible={confirmId !== null}
+        title="Excluir embalagem"
+        message="Esta ação não pode ser desfeita."
+        onConfirm={doDelete}
+        onCancel={() => setConfirmId(null)}
+      />
     </View>
   );
 }

@@ -1,7 +1,7 @@
 import React from 'react';
 import {
   View, Text, TouchableOpacity, StyleSheet,
-  ScrollView, StatusBar,
+  ScrollView, StatusBar, useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { supabase } from '../lib/supabase';
@@ -63,6 +63,11 @@ const MODULES = [
 ] as const;
 
 export default function HomeScreen({ navigation }: any) {
+  const { width } = useWindowDimensions();
+  const HPAD = 20;
+  const GAP = 12;
+  const cardW = Math.floor((width - HPAD * 2 - GAP) / 2);
+
   return (
     <SafeAreaView style={s.safe} edges={['top']}>
       <StatusBar barStyle="dark-content" backgroundColor={colors.bg} />
@@ -90,13 +95,18 @@ export default function HomeScreen({ navigation }: any) {
         <Text style={s.sectionLabel}>Módulos do sistema</Text>
 
         <View style={s.grid}>
-          {MODULES.map((m) => (
+          {MODULES.map((m, i) => (
             <AnimatedPressable
               key={m.key}
-              style={[s.card, { backgroundColor: m.bg, borderColor: m.border }]}
+              style={[
+                s.card,
+                { width: cardW, backgroundColor: m.bg, borderColor: m.border },
+                i % 2 === 1 && { marginLeft: GAP },
+                i >= 2 && { marginTop: GAP },
+              ]}
               onPress={() => navigation.getParent()?.navigate(m.tab)}
             >
-              <View style={[s.iconWrap, { backgroundColor: m.accent + '18' }]}>
+              <View style={[s.iconWrap, { backgroundColor: m.accent + '20' }]}>
                 <Text style={s.iconEmoji}>{m.icon}</Text>
               </View>
               <Text style={[s.cardTitle, { color: m.accent }]}>{m.label}</Text>
@@ -147,18 +157,17 @@ const s = StyleSheet.create({
     letterSpacing: 0.8,
     marginBottom: 16,
   },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
+  grid: { flexDirection: 'row', flexWrap: 'wrap' },
   card: {
     borderRadius: 16,
     borderWidth: 1,
     padding: 16,
-    minHeight: 148,
-    width: '47%',
+    minHeight: 152,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.07,
+    shadowRadius: 6,
+    elevation: 3,
   },
   iconWrap: {
     width: 44,
