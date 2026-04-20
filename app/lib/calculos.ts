@@ -2,26 +2,31 @@ import { supabase } from './supabase';
 import type { ComposicaoProduto, ProdutoComCusto } from './types';
 
 /**
- * Calcula o custo unitário de um insumo com base no preço da embalagem.
- * custo_unitario = preco_custo / quantidade_embalagem
+ * Calcula o custo unitário de um ingrediente ou embalagem.
  */
-function calcularCustoUnitario(precoCusto: number, quantidadeEmbalagem: number): number {
-  if (quantidadeEmbalagem === 0) return 0;
-  return precoCusto / quantidadeEmbalagem;
+function calcularCustoUnitario(preco: number, quantidade: number): number {
+  if (quantidade === 0) return 0;
+  return preco / quantidade;
 }
 
 /**
- * Calcula o custo total de um produto somando o custo de cada insumo
- * proporcional à quantidade utilizada na receita.
+ * Calcula o custo total de um produto somando ingredientes e embalagens.
  */
 function calcularCustoProduto(composicao: ComposicaoProduto[]): number {
   return composicao.reduce((total, item) => {
-    if (!item.insumos) return total;
-    const custoUnitario = calcularCustoUnitario(
-      item.insumos.preco_custo,
-      item.insumos.quantidade_embalagem
-    );
-    return total + custoUnitario * item.quantidade_utilizada;
+    let custoUnitario = 0;
+    if (item.insumos) {
+      custoUnitario = calcularCustoUnitario(
+        Number(item.insumos.preco_custo),
+        Number(item.insumos.quantidade_embalagem)
+      );
+    } else if (item.embalagens) {
+      custoUnitario = calcularCustoUnitario(
+        Number(item.embalagens.custo),
+        Number(item.embalagens.quantidade_embalagem)
+      );
+    }
+    return total + custoUnitario * Number(item.quantidade_utilizada);
   }, 0);
 }
 
@@ -40,7 +45,7 @@ export async function calcularCustoPorProdutoId(produtoId: string): Promise<Prod
 
   const { data: composicao, error: errComposicao } = await supabase
     .from('composicao_produto')
-    .select('*, insumos(*)')
+    .select('*, insumos(*), embalagens(*)')
     .eq('produto_id', produtoId);
 
   if (errComposicao || !composicao) return null;

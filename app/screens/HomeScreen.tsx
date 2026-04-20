@@ -4,9 +4,11 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { supabase } from '../lib/supabase';
+import FoxBackground from '../components/FoxBackground';
+import AnimatedPressable from '../components/AnimatedPressable';
 
 type Bloco = {
-  icone: string;
+  emoji: string;
   titulo: string;
   descricao: string;
   cor: string;
@@ -17,23 +19,31 @@ type Bloco = {
 export default function HomeScreen({ navigation }: any) {
   const blocos: Bloco[] = [
     {
-      icone: '🛒',
-      titulo: 'Insumos',
+      emoji: '🦊\n🥕🌿',
+      titulo: 'Ingredientes',
       descricao: 'Cadastre ingredientes e materiais com custo por unidade',
       cor: '#C0572A',
       corFundo: '#FEF0E8',
-      onPress: () => navigation.navigate('InsumosTab'),
+      onPress: () => navigation.navigate('IngredientesTab'),
     },
     {
-      icone: '🎂',
+      emoji: '🦊\n📦🏷️',
+      titulo: 'Embalagens',
+      descricao: 'Cadastre caixas, sacos, rótulos e calcule o custo por unidade',
+      cor: '#7A3A9A',
+      corFundo: '#F3EBF9',
+      onPress: () => navigation.navigate('EmbalagensTb'),
+    },
+    {
+      emoji: '🦊\n👩‍🍳🍳',
       titulo: 'Produtos',
-      descricao: 'Monte receitas, calcule custos e defina preços de venda',
+      descricao: 'Monte receitas com ingredientes e embalagens, calcule custos e precifique',
       cor: '#9C4A1A',
       corFundo: '#FDE8D8',
       onPress: () => navigation.navigate('ProdutosTab'),
     },
     {
-      icone: '👤',
+      emoji: '🦊🦊🦊',
       titulo: 'Clientes & Pedidos',
       descricao: 'Cadastre clientes, registre vendas e controle pagamentos',
       cor: '#1A6B5A',
@@ -41,9 +51,9 @@ export default function HomeScreen({ navigation }: any) {
       onPress: () => navigation.navigate('ClientesTab'),
     },
     {
-      icone: '💰',
+      emoji: '🦊\n💰📊',
       titulo: 'Financeiro',
-      descricao: 'Veja o total vendido, recebido e pendente por cliente',
+      descricao: 'Total vendido, recebido e pendente por cliente',
       cor: '#1A5A7A',
       corFundo: '#E8F2F8',
       onPress: () => navigation.navigate('FinanceiroTab'),
@@ -53,12 +63,13 @@ export default function HomeScreen({ navigation }: any) {
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFF8F4" />
+      <FoxBackground opacity={0.05} />
       <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
 
         <View style={styles.header}>
           <View>
             <Text style={styles.brand}>Senhorita Raposa</Text>
-            <Text style={styles.sub}>Precificação inteligente</Text>
+            <Text style={styles.sub}>🦊 Precificação inteligente</Text>
           </View>
           <TouchableOpacity onPress={() => supabase.auth.signOut()} style={styles.sairBtn}>
             <Text style={styles.sairTxt}>Sair</Text>
@@ -69,16 +80,15 @@ export default function HomeScreen({ navigation }: any) {
 
         <View style={styles.grid}>
           {blocos.map((b) => (
-            <TouchableOpacity
+            <AnimatedPressable
               key={b.titulo}
-              style={[styles.bloco, { backgroundColor: b.corFundo, borderColor: b.cor + '33' }]}
+              style={[styles.bloco, { backgroundColor: b.corFundo }]}
               onPress={b.onPress}
-              activeOpacity={0.75}
             >
-              <Text style={styles.blocoIcone}>{b.icone}</Text>
+              <Text style={styles.blocoEmoji}>{b.emoji}</Text>
               <Text style={[styles.blocoTitulo, { color: b.cor }]}>{b.titulo}</Text>
               <Text style={styles.blocoDesc}>{b.descricao}</Text>
-            </TouchableOpacity>
+            </AnimatedPressable>
           ))}
         </View>
 
@@ -101,15 +111,13 @@ const styles = StyleSheet.create({
     backgroundColor: '#FEE2E2', borderRadius: 20, marginTop: 4,
   },
   sairTxt: { color: '#C0392B', fontWeight: '700', fontSize: 13 },
-  sectionTitle: {
-    fontSize: 16, fontWeight: '700', color: '#2D1B10', marginBottom: 16,
-  },
+  sectionTitle: { fontSize: 16, fontWeight: '700', color: '#2D1B10', marginBottom: 16 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 14 },
   bloco: {
-    width: '47%', borderRadius: 16, padding: 18,
-    borderWidth: 1.5, minHeight: 140,
+    width: '47%', borderRadius: 16, padding: 18, minHeight: 150,
+    borderWidth: 1.5, borderColor: 'transparent',
   },
-  blocoIcone: { fontSize: 32, marginBottom: 10 },
-  blocoTitulo: { fontSize: 16, fontWeight: '800', marginBottom: 6 },
-  blocoDesc: { fontSize: 12, color: '#5A3E30', lineHeight: 17 },
+  blocoEmoji: { fontSize: 26, marginBottom: 8, lineHeight: 32 },
+  blocoTitulo: { fontSize: 15, fontWeight: '800', marginBottom: 6 },
+  blocoDesc: { fontSize: 11.5, color: '#5A3E30', lineHeight: 16 },
 });

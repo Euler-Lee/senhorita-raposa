@@ -4,6 +4,8 @@ import {
   Alert, ActivityIndicator, ScrollView, KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { supabase } from '../../lib/supabase';
+import FoxBackground from '../../components/FoxBackground';
+import FoxSaveToast from '../../components/FoxSaveToast';
 
 const UNIDADES = ['g', 'kg', 'ml', 'L', 'un'];
 
@@ -24,9 +26,10 @@ export default function InsumoFormScreen({ route, navigation }: any) {
   const [qtdEmbalagem, setQtdEmbalagem] = useState('');
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(!!editId);
+  const [showToast, setShowToast] = useState(false);
 
   useEffect(() => {
-    navigation.setOptions({ title: editId ? 'Editar Insumo' : 'Novo Insumo' });
+    navigation.setOptions({ title: editId ? 'Editar Ingrediente' : 'Novo Ingrediente' });
     if (!editId) return;
     supabase.from('insumos').select('*').eq('id', editId).single().then(({ data }) => {
       if (data) {
@@ -57,7 +60,8 @@ export default function InsumoFormScreen({ route, navigation }: any) {
     setLoading(false);
 
     if (error) { Alert.alert('Erro ao salvar', error.message); return; }
-    navigation.goBack();
+    setShowToast(true);
+    setTimeout(() => navigation.goBack(), 1500);
   }
 
   if (fetching) {
@@ -70,6 +74,8 @@ export default function InsumoFormScreen({ route, navigation }: any) {
 
   return (
     <KeyboardAvoidingView style={styles.root} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <FoxBackground opacity={0.04} />
+      <FoxSaveToast visible={showToast} />
       <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
 
         <Text style={styles.label}>Nome</Text>
@@ -125,7 +131,7 @@ export default function InsumoFormScreen({ route, navigation }: any) {
         <TouchableOpacity style={styles.button} onPress={handleSave} disabled={loading}>
           {loading
             ? <ActivityIndicator color="#fff" />
-            : <Text style={styles.buttonText}>{editId ? 'Salvar alteracoes' : 'Cadastrar insumo'}</Text>}
+            : <Text style={styles.buttonText}>{editId ? 'Salvar alterações' : 'Cadastrar ingrediente'}</Text>}
         </TouchableOpacity>
 
       </ScrollView>

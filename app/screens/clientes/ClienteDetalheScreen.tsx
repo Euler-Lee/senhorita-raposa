@@ -1,7 +1,7 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   View, Text, FlatList, TouchableOpacity,
-  StyleSheet, Alert, ActivityIndicator,
+  StyleSheet, Alert, ActivityIndicator, Platform,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { supabase } from '../../lib/supabase';
@@ -11,6 +11,10 @@ export default function ClienteDetalheScreen({ route, navigation }: any) {
   const { clienteId, nome } = route.params as { clienteId: string; nome: string };
   const [pedidos, setPedidos] = useState<Pedido[]>([]);
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    navigation.setOptions({ title: nome });
+  }, [nome]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -25,22 +29,32 @@ export default function ClienteDetalheScreen({ route, navigation }: any) {
 
   useFocusEffect(load);
 
-  useEffect_navigation(navigation, nome);
+  async function executarPago(pedidoId: string) {
+    await supabase
+      .from('pedidos')
+      .update({ pago: true, data_pagamento: new Date().toISOString() })
+      .eq('id', pedidoId);
+    load();
+  }
 
-  async function marcarPago(pedido: Pedido) {
+  function marcarPago(pedido: Pedido) {
     if (pedido.pago) return;
+    if (Platform.OS === 'web') {
+      executarPago(pedido.id);
+      return;
+    }
     Alert.alert('Confirmar pagamento', `Marcar "${pedido.descricao}" como pago?`, [
       { text: 'Cancelar', style: 'cancel' },
-      {
-        text: 'Confirmar', onPress: async () => {
-          await supabase.from('pedidos').update({ pago: true, data_pagamento: new Date().toISOString() }).eq('id', pedido.id);
-          load();
-        },
-      },
+      { text: 'Confirmar', onPress: () => executarPago(pedido.id) },
     ]);
   }
 
   async function handleDelete(id: string) {
+    if (Platform.OS === 'web') {
+      await supabase.from('pedidos').delete().eq('id', id);
+      load();
+      return;
+    }
     Alert.alert('Excluir pedido', 'Esta ação não pode ser desfeita.', [
       { text: 'Cancelar', style: 'cancel' },
       {
@@ -58,7 +72,6 @@ export default function ClienteDetalheScreen({ route, navigation }: any) {
 
   return (
     <View style={s.root}>
-      {/* Resumo topo */}
       <View style={s.resumo}>
         <View style={s.resumoItem}>
           <Text style={s.resumoLabel}>Total</Text>
@@ -66,11 +79,13 @@ export default function ClienteDetalheScreen({ route, navigation }: any) {
         </View>
         <View style={[s.resumoItem, s.resumoBorder]}>
           <Text style={s.resumoLabel}>Pago</Text>
-          <Text style={[s.resumoValor, s.pago]}>R$ {totalPago.toFixed(2).replace('.', ',')}</Text>
+          <Text style={[s.resumoValor, s.corPago]}>R$ {totalPago.toFixed(2).replace('.', ',')}</Text>
         </View>
         <View style={s.resumoItem}>
           <Text style={s.resumoLabel}>Pendente</Text>
-          <Text style={[s.resumoValor, s.pendente]}>R$ {totalPendente.toFixed(2).replace('.', ',')}</Text>
+          <Text style={[s.resumoValor, totalPendente > 0 ? s.corPendente : s.corPago]}>
+            R$ {totalPendente.toFixed(2).replace('.', ',')}
+          </Text>
         </View>
       </View>
 
@@ -78,12 +93,11 @@ export default function ClienteDetalheScreen({ route, navigation }: any) {
         data={pedidos}
         keyExtractor={p => p.id}
         contentContainerStyle={pedidos.length === 0 ? s.emptyContainer : s.list}
-        ListEmptyComponent={<Text style={s.empty}>Nenhum pedido ainda.{'\n'}Adicione o primeiro pedido.</Text>}
+        ListEmptyComponent={<Text style={s.empty}>Nenhum pedido ainda.{'\n'}Toque em "+ Novo Pedido".</Text>}
         renderItem={({ item }) => {
           const venc = item.data_vencimento
-            ? new Date(item.data_vencimento + 'T00:00:00').toLocaleDateString('pt-BR')
+            ? new Date(item.data_vencimento + 'T12:00:00').toLocaleDateString('pt-BR')
             : null;
-          const vencido = item.data_vencimento && !item.pago && new Date(item.data_vencimento) < new Date();
           return (
             <View style={[s.card, item.pago && s.cardPago]}>
               <View style={s.cardBody}>
@@ -94,24 +108,19 @@ export default function ClienteDetalheScreen({ route, navigation }: any) {
                 {(item as any).produtos?.nome && (
                   <Text style={s.produtoTag}>🎂 {(item as any).produtos.nome}</Text>
                 )}
+                {venc && <Text style={s.venc}>📅 Vence: {venc}</Text>}
                 <View style={s.cardBottom}>
-                  {venc && (
-                    <Text style={[s.venc, vencido && s.vencido]}>
-                      {vencido ? '⚠️ Vencido: ' : '📅 Vence: '}{venc}
-                    </Text>
+                  {item.pago ? (
+                    <View style={s.tagPago}><Text style={s.tagPagoTxt}>✓ Pago</Text></View>
+                  ) : (
+                    <TouchableOpacity style={s.btnPendente} onPress={() => marcarPago(item)}>
+                      <Text style={s.btnPendenteTxt}>⏳ Pendente — toque para marcar como pago</Text>
+                    </TouchableOpacity>
                   )}
-                  <TouchableOpacity
-                    style={[s.statusBtn, item.pago ? s.statusPago : s.statusPendente]}
-                    onPress={() => marcarPago(item)}
-                  >
-                    <Text style={item.pago ? s.statusPagoTxt : s.statusPendenteTxt}>
-                      {item.pago ? '✓ Pago' : 'Marcar como pago'}
-                    </Text>
-                  </TouchableOpacity>
                 </View>
               </View>
               <TouchableOpacity style={s.deleteBtn} onPress={() => handleDelete(item.id)}>
-                <Text style={s.deleteTxt}>X</Text>
+                <Text style={s.deleteTxt}>✕</Text>
               </TouchableOpacity>
             </View>
           );
@@ -128,27 +137,16 @@ export default function ClienteDetalheScreen({ route, navigation }: any) {
   );
 }
 
-// Hook auxiliar para atualizar o título
-function useEffect_navigation(navigation: any, nome: string) {
-  const React = require('react');
-  React.useEffect(() => {
-    navigation.setOptions({ title: nome });
-  }, [nome]);
-}
-
 const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#F4FBF9' },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  resumo: {
-    flexDirection: 'row', backgroundColor: '#1A6B5A',
-    paddingVertical: 16, paddingHorizontal: 20,
-  },
+  resumo: { flexDirection: 'row', backgroundColor: '#1A6B5A', paddingVertical: 16, paddingHorizontal: 20 },
   resumoItem: { flex: 1, alignItems: 'center' },
   resumoBorder: { borderLeftWidth: 1, borderRightWidth: 1, borderColor: '#2A9B7A' },
   resumoLabel: { fontSize: 11, color: '#A8D8CE', marginBottom: 4, textTransform: 'uppercase' },
   resumoValor: { fontSize: 15, fontWeight: '800', color: '#fff' },
-  pago: { color: '#A8FFD8' },
-  pendente: { color: '#FFCB8A' },
+  corPago: { color: '#A8FFD8' },
+  corPendente: { color: '#FFCB8A' },
   list: { padding: 16, paddingBottom: 90 },
   emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 40 },
   empty: { color: '#5A8A7A', fontSize: 15, textAlign: 'center', lineHeight: 24 },
@@ -156,22 +154,23 @@ const s = StyleSheet.create({
     backgroundColor: '#fff', borderRadius: 12, marginBottom: 12,
     flexDirection: 'row', borderWidth: 1, borderColor: '#C8E6DF', overflow: 'hidden',
   },
-  cardPago: { opacity: 0.65, borderColor: '#A8D8CE' },
+  cardPago: { opacity: 0.6, borderColor: '#A8D8CE' },
   cardBody: { flex: 1, padding: 14 },
   cardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 },
   descricao: { fontSize: 15, fontWeight: '700', color: '#0D2B24', flex: 1, marginRight: 8 },
   valor: { fontSize: 16, fontWeight: '800', color: '#1A6B5A' },
-  produtoTag: { fontSize: 12, color: '#5A8A7A', marginBottom: 8 },
-  cardBottom: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 },
-  venc: { fontSize: 12, color: '#5A8A7A' },
-  vencido: { color: '#C0392B', fontWeight: '700' },
-  statusBtn: { borderRadius: 20, paddingVertical: 5, paddingHorizontal: 14 },
-  statusPago: { backgroundColor: '#E8F5F1' },
-  statusPagoTxt: { color: '#1A6B5A', fontWeight: '700', fontSize: 12 },
-  statusPendente: { backgroundColor: '#FEF3E2', borderWidth: 1, borderColor: '#F0A030' },
-  statusPendenteTxt: { color: '#C07010', fontWeight: '700', fontSize: 12 },
-  deleteBtn: { justifyContent: 'center', alignItems: 'center', paddingHorizontal: 14, backgroundColor: '#FEE2E2' },
-  deleteTxt: { color: '#C0392B', fontWeight: '700', fontSize: 13 },
+  produtoTag: { fontSize: 12, color: '#5A8A7A', marginBottom: 6 },
+  venc: { fontSize: 12, color: '#5A8A7A', marginBottom: 8 },
+  cardBottom: { marginTop: 4 },
+  tagPago: { backgroundColor: '#E8F5F1', borderRadius: 20, paddingVertical: 6, paddingHorizontal: 14, alignSelf: 'flex-start' },
+  tagPagoTxt: { color: '#1A6B5A', fontWeight: '700', fontSize: 13 },
+  btnPendente: {
+    backgroundColor: '#FEF3E2', borderRadius: 20, paddingVertical: 8,
+    paddingHorizontal: 14, borderWidth: 1.5, borderColor: '#F0A030', alignSelf: 'flex-start',
+  },
+  btnPendenteTxt: { color: '#C07010', fontWeight: '700', fontSize: 12 },
+  deleteBtn: { width: 44, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FEE2E2' },
+  deleteTxt: { color: '#C0392B', fontWeight: '800', fontSize: 15 },
   fab: { margin: 16, backgroundColor: '#1A6B5A', borderRadius: 12, padding: 16, alignItems: 'center' },
   fabText: { color: '#fff', fontSize: 16, fontWeight: '700' },
 });

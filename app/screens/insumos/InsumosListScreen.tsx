@@ -1,11 +1,12 @@
 import React, { useState, useCallback } from 'react';
 import {
   View, Text, FlatList, TouchableOpacity,
-  StyleSheet, Alert, ActivityIndicator,
+  StyleSheet, Alert, ActivityIndicator, Platform,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { supabase } from '../../lib/supabase';
 import type { Insumo } from '../../lib/types';
+import FoxBackground from '../../components/FoxBackground';
 
 export default function InsumosListScreen({ navigation }: any) {
   const [insumos, setInsumos] = useState<Insumo[]>([]);
@@ -21,7 +22,12 @@ export default function InsumosListScreen({ navigation }: any) {
   useFocusEffect(load);
 
   async function handleDelete(id: string) {
-    Alert.alert('Excluir insumo', 'Esta acao nao pode ser desfeita.', [
+    if (Platform.OS === 'web') {
+      await supabase.from('insumos').delete().eq('id', id);
+      load();
+      return;
+    }
+    Alert.alert('Excluir ingrediente', 'Esta ação não pode ser desfeita.', [
       { text: 'Cancelar', style: 'cancel' },
       {
         text: 'Excluir', style: 'destructive',
@@ -39,12 +45,13 @@ export default function InsumosListScreen({ navigation }: any) {
 
   return (
     <View style={styles.container}>
+      <FoxBackground opacity={0.04} />
       <FlatList
         data={insumos}
         keyExtractor={item => item.id}
         contentContainerStyle={insumos.length === 0 ? styles.emptyContainer : styles.list}
         ListEmptyComponent={
-          <Text style={styles.empty}>Nenhum insumo cadastrado ainda.{'\n'}Adicione seus ingredientes e materiais.</Text>
+          <Text style={styles.empty}>Nenhum ingrediente cadastrado ainda.{"\n"}Adicione seus ingredientes e materiais.</Text>
         }
         renderItem={({ item }) => {
           const custoUnit = Number(item.preco_custo) / Number(item.quantidade_embalagem);
@@ -74,7 +81,7 @@ export default function InsumosListScreen({ navigation }: any) {
         }}
       />
       <TouchableOpacity style={styles.fab} onPress={() => navigation.navigate('InsumoForm')}>
-        <Text style={styles.fabText}>+ Novo Insumo</Text>
+        <Text style={styles.fabText}>+ Novo Ingrediente</Text>
       </TouchableOpacity>
     </View>
   );
@@ -95,8 +102,8 @@ const styles = StyleSheet.create({
   nome: { fontSize: 16, fontWeight: '700', color: '#2D1B10', marginBottom: 4 },
   meta: { fontSize: 13, color: '#8A6A5A' },
   unitario: { fontSize: 12, color: '#D45C2A', marginTop: 4, fontWeight: '600' },
-  deleteBtn: { padding: 20, backgroundColor: '#FEE2E2' },
-  deleteTxt: { color: '#C0392B', fontWeight: '700', fontSize: 13 },
+  deleteBtn: { width: 44, height: 44, borderRadius: 22, margin: 10, backgroundColor: '#FEE2E2', justifyContent: 'center', alignItems: 'center' },
+  deleteTxt: { color: '#C0392B', fontWeight: '800', fontSize: 15 },
   fab: {
     margin: 16, backgroundColor: '#D45C2A', borderRadius: 12,
     padding: 16, alignItems: 'center',

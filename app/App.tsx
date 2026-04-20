@@ -15,9 +15,13 @@ import SignupScreen from './screens/auth/SignupScreen';
 // Home
 import HomeScreen from './screens/HomeScreen';
 
-// Insumos
+// Insumos / Ingredientes
 import InsumosListScreen from './screens/insumos/InsumosListScreen';
 import InsumoFormScreen from './screens/insumos/InsumoFormScreen';
+
+// Embalagens
+import EmbalagensList from './screens/embalagens/EmbalagensList';
+import EmbalagemFormScreen from './screens/embalagens/EmbalagemFormScreen';
 
 // Produtos
 import ProdutosListScreen from './screens/produtos/ProdutosListScreen';
@@ -36,7 +40,8 @@ import FinanceiroScreen from './screens/FinanceiroScreen';
 const AuthStack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 const HomeStack = createNativeStackNavigator();
-const InsumosStack = createNativeStackNavigator();
+const IngredientesStack = createNativeStackNavigator();
+const EmbalagensSt = createNativeStackNavigator();
 const ProdutosStack = createNativeStackNavigator();
 const ClientesStack = createNativeStackNavigator();
 const FinanceiroStack = createNativeStackNavigator();
@@ -59,6 +64,12 @@ const HEADER_AZUL = {
   headerTitleStyle: { fontWeight: '700' as const },
 };
 
+const HEADER_ROXO = {
+  headerStyle: { backgroundColor: '#FAF4FF' },
+  headerTintColor: '#7A3A9A',
+  headerTitleStyle: { fontWeight: '700' as const },
+};
+
 function HomeNavigator() {
   return (
     <HomeStack.Navigator screenOptions={{ headerShown: false }}>
@@ -67,12 +78,21 @@ function HomeNavigator() {
   );
 }
 
-function InsumosNavigator() {
+function IngredientesNavigator() {
   return (
-    <InsumosStack.Navigator screenOptions={HEADER}>
-      <InsumosStack.Screen name="InsumosList" component={InsumosListScreen} options={{ title: 'Insumos' }} />
-      <InsumosStack.Screen name="InsumoForm" component={InsumoFormScreen} options={{ title: 'Novo Insumo' }} />
-    </InsumosStack.Navigator>
+    <IngredientesStack.Navigator screenOptions={HEADER}>
+      <IngredientesStack.Screen name="InsumosList" component={InsumosListScreen} options={{ title: 'Ingredientes' }} />
+      <IngredientesStack.Screen name="InsumoForm" component={InsumoFormScreen} options={{ title: 'Novo Ingrediente' }} />
+    </IngredientesStack.Navigator>
+  );
+}
+
+function EmbalagenNavigator() {
+  return (
+    <EmbalagensSt.Navigator screenOptions={HEADER_ROXO}>
+      <EmbalagensSt.Screen name="EmbalagensList" component={EmbalagensList} options={{ title: 'Embalagens' }} />
+      <EmbalagensSt.Screen name="EmbalagemForm" component={EmbalagemFormScreen} options={{ title: 'Nova Embalagem' }} />
+    </EmbalagensSt.Navigator>
   );
 }
 
@@ -117,7 +137,8 @@ function AppTabs() {
       }}
     >
       <Tab.Screen name="HomeTab" component={HomeNavigator} options={{ title: 'Início' }} />
-      <Tab.Screen name="InsumosTab" component={InsumosNavigator} options={{ title: 'Insumos' }} />
+      <Tab.Screen name="IngredientesTab" component={IngredientesNavigator} options={{ title: 'Ingredientes' }} />
+      <Tab.Screen name="EmbalagensTb" component={EmbalagenNavigator} options={{ title: 'Embalagens' }} />
       <Tab.Screen name="ProdutosTab" component={ProdutosNavigator} options={{ title: 'Produtos' }} />
       <Tab.Screen name="ClientesTab" component={ClientesNavigator} options={{ title: 'Clientes' }} />
       <Tab.Screen name="FinanceiroTab" component={FinanceiroNavigator} options={{ title: 'Financeiro' }} />

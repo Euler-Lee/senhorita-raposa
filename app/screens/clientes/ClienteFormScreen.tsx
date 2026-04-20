@@ -4,6 +4,8 @@ import {
   Alert, ActivityIndicator, ScrollView, KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { supabase } from '../../lib/supabase';
+import FoxBackground from '../../components/FoxBackground';
+import FoxSaveToast from '../../components/FoxSaveToast';
 
 export default function ClienteFormScreen({ route, navigation }: any) {
   const editId: string | undefined = route.params?.id;
@@ -12,6 +14,7 @@ export default function ClienteFormScreen({ route, navigation }: any) {
   const [telefone, setTelefone] = useState('');
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(!!editId);
+  const [showToast, setShowToast] = useState(false);
 
   useEffect(() => {
     navigation.setOptions({ title: editId ? 'Editar Cliente' : 'Novo Cliente' });
@@ -31,13 +34,16 @@ export default function ClienteFormScreen({ route, navigation }: any) {
       : await supabase.from('clientes').insert(payload);
     setLoading(false);
     if (error) { Alert.alert('Erro', error.message); return; }
-    navigation.goBack();
+    setShowToast(true);
+    setTimeout(() => navigation.goBack(), 1500);
   }
 
   if (fetching) return <View style={s.center}><ActivityIndicator color="#1A6B5A" /></View>;
 
   return (
     <KeyboardAvoidingView style={s.root} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <FoxBackground opacity={0.04} />
+      <FoxSaveToast visible={showToast} />
       <ScrollView contentContainerStyle={s.container} keyboardShouldPersistTaps="handled">
 
         <Text style={s.label}>Nome *</Text>

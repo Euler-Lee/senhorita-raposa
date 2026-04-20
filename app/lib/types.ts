@@ -17,12 +17,24 @@ export type Produto = {
   criado_em: string;
 };
 
+export type Embalagem = {
+  id: string;
+  user_id: string;
+  nome: string;
+  unidade_medida: string;
+  custo: number;
+  quantidade_embalagem: number;
+  criado_em: string;
+};
+
 export type ComposicaoProduto = {
   id: string;
   produto_id: string;
-  insumo_id: string;
+  insumo_id: string | null;
+  embalagem_id: string | null;
   quantidade_utilizada: number;
   insumos?: Insumo;
+  embalagens?: Embalagem;
 };
 
 export type ProdutoComCusto = Produto & {

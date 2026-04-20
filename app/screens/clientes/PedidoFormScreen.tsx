@@ -6,6 +6,8 @@ import {
 } from 'react-native';
 import { supabase } from '../../lib/supabase';
 import type { Produto } from '../../lib/types';
+import FoxBackground from '../../components/FoxBackground';
+import FoxSaveToast from '../../components/FoxSaveToast';
 
 export default function PedidoFormScreen({ route, navigation }: any) {
   const { clienteId, clienteNome } = route.params as { clienteId: string; clienteNome: string };
@@ -17,6 +19,7 @@ export default function PedidoFormScreen({ route, navigation }: any) {
   const [produtos, setProdutos] = useState<Produto[]>([]);
   const [modalVisible, setModalVisible] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [showToast, setShowToast] = useState(false);
 
   useEffect(() => {
     navigation.setOptions({ title: `Pedido — ${clienteNome}` });
@@ -68,12 +71,15 @@ export default function PedidoFormScreen({ route, navigation }: any) {
     });
     setLoading(false);
     if (error) { Alert.alert('Erro', error.message); return; }
-    navigation.goBack();
+    setShowToast(true);
+    setTimeout(() => navigation.goBack(), 1500);
   }
 
   return (
     <>
       <KeyboardAvoidingView style={s.root} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <FoxBackground opacity={0.04} />
+        <FoxSaveToast visible={showToast} />
         <ScrollView contentContainerStyle={s.container} keyboardShouldPersistTaps="handled">
 
           <Text style={s.label}>Vincular a um produto cadastrado (opcional)</Text>

@@ -1,12 +1,13 @@
 import React, { useState, useCallback } from 'react';
 import {
   View, Text, FlatList, TouchableOpacity,
-  StyleSheet, Alert, ActivityIndicator,
+  StyleSheet, Alert, ActivityIndicator, Platform,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { listarProdutosComCusto } from '../../lib/calculos';
 import { supabase } from '../../lib/supabase';
 import type { ProdutoComCusto } from '../../lib/types';
+import FoxBackground from '../../components/FoxBackground';
 
 export default function ProdutosListScreen({ navigation }: any) {
   const [produtos, setProdutos] = useState<ProdutoComCusto[]>([]);
@@ -22,7 +23,12 @@ export default function ProdutosListScreen({ navigation }: any) {
   useFocusEffect(load);
 
   async function handleDelete(id: string) {
-    Alert.alert('Excluir produto', 'Esta acao nao pode ser desfeita.', [
+    if (Platform.OS === 'web') {
+      await supabase.from('produtos').delete().eq('id', id);
+      load();
+      return;
+    }
+    Alert.alert('Excluir produto', 'Esta ação não pode ser desfeita.', [
       { text: 'Cancelar', style: 'cancel' },
       {
         text: 'Excluir', style: 'destructive',
@@ -40,6 +46,7 @@ export default function ProdutosListScreen({ navigation }: any) {
 
   return (
     <View style={styles.container}>
+      <FoxBackground opacity={0.04} />
       <FlatList
         data={produtos}
         keyExtractor={item => item.id}
@@ -119,11 +126,11 @@ const styles = StyleSheet.create({
   statValue: { fontSize: 14, fontWeight: '700', color: '#2D1B10' },
   success: { color: '#2E7D32' },
   danger: { color: '#C0392B' },
-  actions: { flexDirection: 'column' },
-  editBtn: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 14, backgroundColor: '#FEF0E8' },
+  actions: { flexDirection: 'column', justifyContent: 'center', padding: 10, gap: 8 },
+  editBtn: { width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FEF0E8' },
   editTxt: { color: '#D45C2A', fontWeight: '700', fontSize: 11 },
-  deleteBtn: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 14, backgroundColor: '#FEE2E2' },
-  deleteTxt: { color: '#C0392B', fontWeight: '700', fontSize: 13 },
+  deleteBtn: { width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FEE2E2' },
+  deleteTxt: { color: '#C0392B', fontWeight: '800', fontSize: 15 },
   fab: {
     margin: 16, backgroundColor: '#D45C2A', borderRadius: 12,
     padding: 16, alignItems: 'center',
