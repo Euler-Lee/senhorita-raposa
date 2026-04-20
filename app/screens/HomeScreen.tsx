@@ -104,7 +104,7 @@ export default function HomeScreen({ navigation }: any) {
                 i % 2 === 1 && { marginLeft: GAP },
                 i >= 2 && { marginTop: GAP },
               ]}
-              onPress={() => navigation.getParent()?.navigate(m.tab)}
+              onPress={() => navigation.navigate(m.tab)}
             >
               <View style={[s.iconWrap, { backgroundColor: m.accent + '20' }]}>
                 <Text style={s.iconEmoji}>{m.icon}</Text>
