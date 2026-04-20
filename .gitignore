@@ -1,0 +1,10 @@
+# Dependências Node
+app/node_modules/
+
+# Expo
+app/.expo/
+app/dist/
+
+# Variáveis de ambiente (nunca commitar)
+app/.env
+app/.env.local

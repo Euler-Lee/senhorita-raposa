@@ -1,0 +1,334 @@
+import React, { useState, useEffect } from 'react';
+import {
+  View, Text, TextInput, TouchableOpacity, StyleSheet,
+  Alert, ActivityIndicator, ScrollView, KeyboardAvoidingView,
+  Platform, Modal, FlatList,
+} from 'react-native';
+import { supabase } from '../../lib/supabase';
+import type { Insumo } from '../../lib/types';
+
+type ComposicaoLocal = { insumo: Insumo; quantidade: string };
+
+export default function ProdutoFormScreen({ route, navigation }: any) {
+  const editId: string | undefined = route.params?.id;
+
+  const [nome, setNome] = useState('');
+  const [precoVenda, setPrecoVenda] = useState('');
+  const [composicao, setComposicao] = useState<ComposicaoLocal[]>([]);
+  const [insumos, setInsumos] = useState<Insumo[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [fetching, setFetching] = useState(true);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [insumoSelecionado, setInsumoSelecionado] = useState<Insumo | null>(null);
+  const [qtdModal, setQtdModal] = useState('');
+
+  useEffect(() => {
+    navigation.setOptions({ title: editId ? 'Editar Produto' : 'Novo Produto' });
+    loadData();
+  }, [editId]);
+
+  async function loadData() {
+    const { data: ins } = await supabase.from('insumos').select('*').order('nome');
+    setInsumos((ins as Insumo[]) ?? []);
+
+    if (editId) {
+      const [{ data: prod }, { data: comp }] = await Promise.all([
+        supabase.from('produtos').select('*').eq('id', editId).single(),
+        supabase.from('composicao_produto').select('*, insumos(*)').eq('produto_id', editId),
+      ]);
+      if (prod) {
+        setNome(prod.nome);
+        setPrecoVenda(prod.preco_venda ? String(prod.preco_venda) : '');
+      }
+      if (comp) {
+        setComposicao(
+          comp.map((c: any) => ({ insumo: c.insumos as Insumo, quantidade: String(c.quantidade_utilizada) }))
+        );
+      }
+    }
+    setFetching(false);
+  }
+
+  function calcularCustoLocal(): number {
+    return composicao.reduce((total, item) => {
+      const qtd = parseFloat(item.quantidade.replace(',', '.'));
+      const unitario = Number(item.insumo.preco_custo) / Number(item.insumo.quantidade_embalagem);
+      return total + (isNaN(qtd) ? 0 : unitario * qtd);
+    }, 0);
+  }
+
+  function handleConfirmarInsumo() {
+    if (!insumoSelecionado || !qtdModal) return;
+    const qtd = parseFloat(qtdModal.replace(',', '.'));
+    if (isNaN(qtd) || qtd <= 0) { Alert.alert('Erro', 'Informe uma quantidade valida.'); return; }
+
+    setComposicao(prev => {
+      const idx = prev.findIndex(i => i.insumo.id === insumoSelecionado!.id);
+      if (idx >= 0) {
+        const updated = [...prev];
+        updated[idx] = { ...updated[idx], quantidade: String(qtd) };
+        return updated;
+      }
+      return [...prev, { insumo: insumoSelecionado!, quantidade: String(qtd) }];
+    });
+    setModalVisible(false);
+    setInsumoSelecionado(null);
+    setQtdModal('');
+  }
+
+  async function handleSave() {
+    if (!nome.trim()) { Alert.alert('Erro', 'Informe o nome do produto.'); return; }
+    setLoading(true);
+
+    const payload: Record<string, unknown> = { nome: nome.trim() };
+    if (precoVenda) payload.preco_venda = parseFloat(precoVenda.replace(',', '.'));
+
+    let produtoId = editId;
+
+    if (editId) {
+      const { error } = await supabase.from('produtos').update(payload).eq('id', editId);
+      if (error) { Alert.alert('Erro', error.message); setLoading(false); return; }
+    } else {
+      const { data, error } = await supabase.from('produtos').insert(payload).select('id').single();
+      if (error || !data) { Alert.alert('Erro', error?.message ?? 'Falha ao criar produto.'); setLoading(false); return; }
+      produtoId = data.id;
+    }
+
+    // Reescreve composicao completamente
+    await supabase.from('composicao_produto').delete().eq('produto_id', produtoId);
+    if (composicao.length > 0) {
+      const rows = composicao.map(item => ({
+        produto_id: produtoId,
+        insumo_id: item.insumo.id,
+        quantidade_utilizada: parseFloat(item.quantidade.replace(',', '.')),
+      }));
+      const { error } = await supabase.from('composicao_produto').insert(rows);
+      if (error) { Alert.alert('Erro na composicao', error.message); setLoading(false); return; }
+    }
+
+    setLoading(false);
+    navigation.goBack();
+  }
+
+  if (fetching) {
+    return <View style={styles.center}><ActivityIndicator color="#D45C2A" size="large" /></View>;
+  }
+
+  const custoLocal = calcularCustoLocal();
+  const vendaNum = precoVenda ? parseFloat(precoVenda.replace(',', '.')) : null;
+
+  return (
+    <>
+      <KeyboardAvoidingView style={styles.root} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+
+          <Text style={styles.label}>Nome do produto</Text>
+          <TextInput
+            style={styles.input}
+            value={nome}
+            onChangeText={setNome}
+            placeholder="Ex: Bolo de chocolate"
+            placeholderTextColor="#B08A78"
+          />
+
+          <Text style={styles.label}>Preco de venda (R$) — opcional</Text>
+          <TextInput
+            style={styles.input}
+            value={precoVenda}
+            onChangeText={setPrecoVenda}
+            placeholder="Ex: 45.00"
+            placeholderTextColor="#B08A78"
+            keyboardType="decimal-pad"
+          />
+
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Ingredientes / Composicao</Text>
+            <TouchableOpacity style={styles.addBtn} onPress={() => setModalVisible(true)}>
+              <Text style={styles.addBtnText}>+ Adicionar</Text>
+            </TouchableOpacity>
+          </View>
+
+          {composicao.length === 0 ? (
+            <Text style={styles.emptyComp}>Nenhum ingrediente adicionado ainda.</Text>
+          ) : (
+            composicao.map((item, index) => {
+              const unitario = Number(item.insumo.preco_custo) / Number(item.insumo.quantidade_embalagem);
+              const qtdNum = parseFloat(item.quantidade.replace(',', '.'));
+              const subtotal = isNaN(qtdNum) ? 0 : unitario * qtdNum;
+              return (
+                <View key={item.insumo.id} style={styles.compItem}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.compNome}>{item.insumo.nome}</Text>
+                    <Text style={styles.compMeta}>
+                      {item.quantidade} {item.insumo.unidade_medida}  —  R$ {subtotal.toFixed(4)}
+                    </Text>
+                  </View>
+                  <TouchableOpacity
+                    onPress={() => setComposicao(prev => prev.filter((_, i) => i !== index))}
+                    style={styles.removeBtn}
+                  >
+                    <Text style={styles.removeTxt}>X</Text>
+                  </TouchableOpacity>
+                </View>
+              );
+            })
+          )}
+
+          {composicao.length > 0 && (
+            <View style={styles.custoBox}>
+              <View style={styles.custoRow}>
+                <Text style={styles.custoLabel}>Custo total</Text>
+                <Text style={styles.custoValor}>R$ {custoLocal.toFixed(2)}</Text>
+              </View>
+              {vendaNum !== null && vendaNum > 0 && (
+                <>
+                  <View style={styles.custoRow}>
+                    <Text style={styles.custoLabel}>Lucro estimado</Text>
+                    <Text style={[styles.custoValor, vendaNum - custoLocal >= 0 ? styles.success : styles.danger]}>
+                      R$ {(vendaNum - custoLocal).toFixed(2)}
+                    </Text>
+                  </View>
+                  <View style={styles.custoRow}>
+                    <Text style={styles.custoLabel}>Margem</Text>
+                    <Text style={styles.custoValor}>
+                      {(((vendaNum - custoLocal) / vendaNum) * 100).toFixed(1)}%
+                    </Text>
+                  </View>
+                </>
+              )}
+            </View>
+          )}
+
+          <TouchableOpacity style={styles.button} onPress={handleSave} disabled={loading}>
+            {loading
+              ? <ActivityIndicator color="#fff" />
+              : <Text style={styles.buttonText}>{editId ? 'Salvar alteracoes' : 'Cadastrar produto'}</Text>}
+          </TouchableOpacity>
+
+        </ScrollView>
+      </KeyboardAvoidingView>
+
+      <Modal visible={modalVisible} animationType="slide" transparent>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Adicionar ingrediente</Text>
+            {insumoSelecionado ? (
+              <>
+                <Text style={styles.modalSelected}>{insumoSelecionado.nome}</Text>
+                <Text style={styles.label}>Quantidade ({insumoSelecionado.unidade_medida})</Text>
+                <TextInput
+                  style={styles.input}
+                  value={qtdModal}
+                  onChangeText={setQtdModal}
+                  placeholder="Ex: 200"
+                  placeholderTextColor="#B08A78"
+                  keyboardType="decimal-pad"
+                  autoFocus
+                />
+                <View style={styles.modalRow}>
+                  <TouchableOpacity
+                    style={[styles.modalBtn, styles.modalBtnSecondary]}
+                    onPress={() => setInsumoSelecionado(null)}
+                  >
+                    <Text style={styles.modalBtnSecondaryText}>Voltar</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.modalBtn, styles.modalBtnPrimary]}
+                    onPress={handleConfirmarInsumo}
+                  >
+                    <Text style={styles.modalBtnPrimaryText}>Adicionar</Text>
+                  </TouchableOpacity>
+                </View>
+              </>
+            ) : (
+              <>
+                <FlatList
+                  data={insumos}
+                  keyExtractor={i => i.id}
+                  style={{ maxHeight: 300 }}
+                  ListEmptyComponent={
+                    <Text style={styles.empty}>Cadastre insumos antes de montar a composicao.</Text>
+                  }
+                  renderItem={({ item }) => (
+                    <TouchableOpacity
+                      style={styles.insumoOption}
+                      onPress={() => { setInsumoSelecionado(item); setQtdModal(''); }}
+                    >
+                      <Text style={styles.insumoOptionNome}>{item.nome}</Text>
+                      <Text style={styles.insumoOptionMeta}>{item.unidade_medida}</Text>
+                    </TouchableOpacity>
+                  )}
+                />
+                <TouchableOpacity
+                  style={[styles.modalBtn, styles.modalBtnSecondary, { marginTop: 12 }]}
+                  onPress={() => { setModalVisible(false); setInsumoSelecionado(null); }}
+                >
+                  <Text style={styles.modalBtnSecondaryText}>Cancelar</Text>
+                </TouchableOpacity>
+              </>
+            )}
+          </View>
+        </View>
+      </Modal>
+    </>
+  );
+}
+
+const styles = StyleSheet.create({
+  root: { flex: 1, backgroundColor: '#FFF8F4' },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FFF8F4' },
+  container: { padding: 20, paddingBottom: 48 },
+  label: { fontSize: 14, fontWeight: '600', color: '#2D1B10', marginBottom: 8, marginTop: 20 },
+  input: {
+    borderWidth: 1.5, borderColor: '#EDD9C8', borderRadius: 12,
+    padding: 14, fontSize: 16, color: '#2D1B10', backgroundColor: '#fff',
+  },
+  sectionHeader: {
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+    marginTop: 28, marginBottom: 12,
+  },
+  sectionTitle: { fontSize: 15, fontWeight: '700', color: '#2D1B10' },
+  addBtn: { backgroundColor: '#FEF0E8', borderRadius: 8, paddingVertical: 7, paddingHorizontal: 14 },
+  addBtnText: { color: '#D45C2A', fontWeight: '700', fontSize: 13 },
+  emptyComp: { color: '#8A6A5A', fontSize: 14, fontStyle: 'italic', marginBottom: 8 },
+  compItem: {
+    flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff',
+    borderRadius: 10, padding: 12, marginBottom: 8, borderWidth: 1, borderColor: '#EDD9C8',
+  },
+  compNome: { fontSize: 14, fontWeight: '600', color: '#2D1B10' },
+  compMeta: { fontSize: 12, color: '#8A6A5A', marginTop: 2 },
+  removeBtn: { padding: 8 },
+  removeTxt: { color: '#C0392B', fontWeight: '700', fontSize: 15 },
+  custoBox: { backgroundColor: '#FEF0E8', borderRadius: 12, padding: 16, marginTop: 16 },
+  custoRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
+  custoLabel: { fontSize: 13, color: '#8A6A5A' },
+  custoValor: { fontSize: 18, fontWeight: '800', color: '#D45C2A' },
+  success: { color: '#2E7D32' },
+  danger: { color: '#C0392B' },
+  button: {
+    backgroundColor: '#D45C2A', borderRadius: 12,
+    padding: 16, alignItems: 'center', marginTop: 32,
+  },
+  buttonText: { color: '#fff', fontSize: 16, fontWeight: '700' },
+  empty: { color: '#8A6A5A', fontSize: 14, textAlign: 'center', padding: 16 },
+  // Modal
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' },
+  modalContent: {
+    backgroundColor: '#fff', borderTopLeftRadius: 24, borderTopRightRadius: 24,
+    padding: 24, maxHeight: '80%',
+  },
+  modalTitle: { fontSize: 18, fontWeight: '800', color: '#2D1B10', marginBottom: 16 },
+  modalSelected: { fontSize: 16, fontWeight: '700', color: '#D45C2A', marginBottom: 4 },
+  modalRow: { flexDirection: 'row', gap: 12, marginTop: 12 },
+  modalBtn: { flex: 1, borderRadius: 12, padding: 14, alignItems: 'center' },
+  modalBtnPrimary: { backgroundColor: '#D45C2A' },
+  modalBtnPrimaryText: { color: '#fff', fontWeight: '700' },
+  modalBtnSecondary: { backgroundColor: '#EDD9C8' },
+  modalBtnSecondaryText: { color: '#2D1B10', fontWeight: '700' },
+  insumoOption: {
+    flexDirection: 'row', justifyContent: 'space-between',
+    padding: 14, borderBottomWidth: 1, borderColor: '#EDD9C8',
+  },
+  insumoOptionNome: { fontSize: 15, color: '#2D1B10' },
+  insumoOptionMeta: { fontSize: 13, color: '#8A6A5A' },
+});
