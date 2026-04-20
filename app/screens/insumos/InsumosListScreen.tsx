@@ -95,15 +95,18 @@ const styles = StyleSheet.create({
   empty: { color: '#8A6A5A', fontSize: 16, textAlign: 'center', lineHeight: 24 },
   card: {
     backgroundColor: '#fff', borderRadius: 12, marginBottom: 12,
-    flexDirection: 'row', alignItems: 'center',
-    borderWidth: 1, borderColor: '#EDD9C8', overflow: 'hidden',
+    flexDirection: 'row', alignItems: 'stretch',
+    borderWidth: 1, borderColor: '#EDD9C8',
   },
   cardContent: { flex: 1, padding: 14 },
   nome: { fontSize: 16, fontWeight: '700', color: '#2D1B10', marginBottom: 4 },
   meta: { fontSize: 13, color: '#8A6A5A' },
   unitario: { fontSize: 12, color: '#D45C2A', marginTop: 4, fontWeight: '600' },
-  deleteBtn: { width: 44, height: 44, borderRadius: 22, margin: 10, backgroundColor: '#FEE2E2', justifyContent: 'center', alignItems: 'center' },
-  deleteTxt: { color: '#C0392B', fontWeight: '800', fontSize: 15 },
+  deleteBtn: {
+    width: 52, justifyContent: 'center', alignItems: 'center',
+    backgroundColor: '#FEE2E2', borderTopRightRadius: 12, borderBottomRightRadius: 12,
+  },
+  deleteTxt: { color: '#C0392B', fontWeight: '800', fontSize: 16 },
   fab: {
     margin: 16, backgroundColor: '#D45C2A', borderRadius: 12,
     padding: 16, alignItems: 'center',

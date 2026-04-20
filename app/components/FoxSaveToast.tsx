@@ -5,19 +5,22 @@ export default function FoxSaveToast({ visible }: { visible: boolean }) {
   const scale = useRef(new Animated.Value(0)).current;
   const opacity = useRef(new Animated.Value(0)).current;
   const bounce = useRef(new Animated.Value(0)).current;
+  const thumbScale = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     if (!visible) return;
     scale.setValue(0);
     opacity.setValue(0);
     bounce.setValue(0);
+    thumbScale.setValue(0);
 
     Animated.sequence([
       Animated.parallel([
         Animated.spring(scale, { toValue: 1, useNativeDriver: true, speed: 14, bounciness: 18 }),
         Animated.timing(opacity, { toValue: 1, duration: 180, useNativeDriver: true }),
       ]),
-      Animated.spring(bounce, { toValue: -10, useNativeDriver: true, speed: 20, bounciness: 20 }),
+      Animated.spring(thumbScale, { toValue: 1, useNativeDriver: true, speed: 22, bounciness: 24 }),
+      Animated.spring(bounce, { toValue: -12, useNativeDriver: true, speed: 20, bounciness: 20 }),
       Animated.spring(bounce, { toValue: 0, useNativeDriver: true, speed: 20, bounciness: 20 }),
       Animated.delay(600),
       Animated.parallel([
@@ -32,8 +35,10 @@ export default function FoxSaveToast({ visible }: { visible: boolean }) {
   return (
     <View style={styles.overlay} pointerEvents="none">
       <Animated.View style={[styles.card, { transform: [{ scale }, { translateY: bounce }], opacity }]}>
-        <Text style={styles.fox}>🦊</Text>
-        <Text style={styles.thumbs}>👍</Text>
+        <View style={styles.emojiWrap}>
+          <Text style={styles.fox}>🦊</Text>
+          <Animated.Text style={[styles.thumbs, { transform: [{ scale: thumbScale }] }]}>👍</Animated.Text>
+        </View>
         <Text style={styles.label}>Salvo!</Text>
       </Animated.View>
     </View>
@@ -49,9 +54,9 @@ const styles = StyleSheet.create({
   },
   card: {
     backgroundColor: '#fff',
-    borderRadius: 24,
-    paddingVertical: 24,
-    paddingHorizontal: 36,
+    borderRadius: 28,
+    paddingVertical: 28,
+    paddingHorizontal: 40,
     alignItems: 'center',
     borderWidth: 2.5,
     borderColor: '#D45C2A',
@@ -61,7 +66,23 @@ const styles = StyleSheet.create({
     shadowRadius: 16,
     elevation: 12,
   },
-  fox: { fontSize: 52 },
-  thumbs: { fontSize: 28, marginTop: -8 },
-  label: { fontSize: 20, fontWeight: '900', color: '#D45C2A', marginTop: 8 },
+  emojiWrap: {
+    width: 90,
+    height: 90,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  fox: {
+    fontSize: 72,
+    position: 'absolute',
+    top: 0,
+    left: 0,
+  },
+  thumbs: {
+    fontSize: 34,
+    position: 'absolute',
+    bottom: -2,
+    right: -6,
+  },
+  label: { fontSize: 20, fontWeight: '900', color: '#D45C2A', marginTop: 10 },
 });

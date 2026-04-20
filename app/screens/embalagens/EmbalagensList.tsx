@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import {
   View, Text, FlatList, TouchableOpacity,
-  StyleSheet, Alert, ActivityIndicator,
+  StyleSheet, Alert, ActivityIndicator, Platform,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { supabase } from '../../lib/supabase';
@@ -21,6 +21,11 @@ export default function EmbalagensList({ navigation }: any) {
   useFocusEffect(load);
 
   async function handleDelete(id: string) {
+    if (Platform.OS === 'web') {
+      await supabase.from('embalagens').delete().eq('id', id);
+      load();
+      return;
+    }
     Alert.alert('Excluir embalagem', 'Esta ação não pode ser desfeita.', [
       { text: 'Cancelar', style: 'cancel' },
       {
@@ -82,18 +87,18 @@ const s = StyleSheet.create({
   empty: { color: '#8A6AAA', fontSize: 16, textAlign: 'center', lineHeight: 24 },
   card: {
     backgroundColor: '#fff', borderRadius: 12, marginBottom: 12,
-    flexDirection: 'row', alignItems: 'center',
-    borderWidth: 1, borderColor: '#E0CCEA', overflow: 'hidden',
+    flexDirection: 'row', alignItems: 'stretch',
+    borderWidth: 1, borderColor: '#E0CCEA',
   },
   cardContent: { flex: 1, padding: 14 },
   nome: { fontSize: 16, fontWeight: '700', color: '#2D1B3A', marginBottom: 4 },
   meta: { fontSize: 13, color: '#8A6AAA' },
   unitario: { fontSize: 12, color: '#7A3A9A', marginTop: 4, fontWeight: '600' },
   deleteBtn: {
-    width: 40, height: 40, borderRadius: 20, margin: 10,
-    backgroundColor: '#FEE2E2', justifyContent: 'center', alignItems: 'center',
+    width: 52, justifyContent: 'center', alignItems: 'center',
+    backgroundColor: '#FEE2E2', borderTopRightRadius: 12, borderBottomRightRadius: 12,
   },
-  deleteTxt: { color: '#C0392B', fontWeight: '800', fontSize: 14 },
+  deleteTxt: { color: '#C0392B', fontWeight: '800', fontSize: 16 },
   fab: { margin: 16, backgroundColor: '#7A3A9A', borderRadius: 12, padding: 16, alignItems: 'center' },
   fabText: { color: '#fff', fontSize: 16, fontWeight: '700' },
 });

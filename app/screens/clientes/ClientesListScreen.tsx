@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import {
   View, Text, FlatList, TouchableOpacity,
-  StyleSheet, Alert, ActivityIndicator,
+  StyleSheet, Alert, ActivityIndicator, Platform,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { supabase } from '../../lib/supabase';
@@ -21,6 +21,11 @@ export default function ClientesListScreen({ navigation }: any) {
   useFocusEffect(load);
 
   async function handleDelete(id: string) {
+    if (Platform.OS === 'web') {
+      await supabase.from('clientes').delete().eq('id', id);
+      load();
+      return;
+    }
     Alert.alert('Excluir cliente', 'Todos os pedidos deste cliente também serão excluídos.', [
       { text: 'Cancelar', style: 'cancel' },
       {
@@ -87,8 +92,8 @@ const styles = StyleSheet.create({
   empty: { color: '#5A8A7A', fontSize: 16, textAlign: 'center', lineHeight: 24 },
   card: {
     backgroundColor: '#fff', borderRadius: 12, marginBottom: 12,
-    flexDirection: 'row', alignItems: 'center',
-    borderWidth: 1, borderColor: '#C8E6DF', overflow: 'hidden',
+    flexDirection: 'row', alignItems: 'stretch',
+    borderWidth: 1, borderColor: '#C8E6DF',
   },
   cardContent: { flex: 1, flexDirection: 'row', alignItems: 'center', padding: 14, gap: 12 },
   avatar: {
@@ -99,10 +104,10 @@ const styles = StyleSheet.create({
   nome: { fontSize: 16, fontWeight: '700', color: '#0D2B24' },
   tel: { fontSize: 13, color: '#5A8A7A', marginTop: 2 },
   actions: { flexDirection: 'column' },
-  editBtn: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 14, backgroundColor: '#E8F5F1' },
+  editBtn: { flex: 1, width: 52, justifyContent: 'center', alignItems: 'center', backgroundColor: '#E8F5F1' },
   editTxt: { color: '#1A6B5A', fontWeight: '700', fontSize: 11 },
-  deleteBtn: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 14, backgroundColor: '#FEE2E2' },
-  deleteTxt: { color: '#C0392B', fontWeight: '700', fontSize: 13 },
+  deleteBtn: { flex: 1, width: 52, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FEE2E2', borderTopRightRadius: 12, borderBottomRightRadius: 12 },
+  deleteTxt: { color: '#C0392B', fontWeight: '700', fontSize: 16 },
   fab: {
     margin: 16, backgroundColor: '#1A6B5A', borderRadius: 12,
     padding: 16, alignItems: 'center',

@@ -152,7 +152,7 @@ const s = StyleSheet.create({
   empty: { color: '#5A8A7A', fontSize: 15, textAlign: 'center', lineHeight: 24 },
   card: {
     backgroundColor: '#fff', borderRadius: 12, marginBottom: 12,
-    flexDirection: 'row', borderWidth: 1, borderColor: '#C8E6DF', overflow: 'hidden',
+    flexDirection: 'row', alignItems: 'stretch', borderWidth: 1, borderColor: '#C8E6DF',
   },
   cardPago: { opacity: 0.6, borderColor: '#A8D8CE' },
   cardBody: { flex: 1, padding: 14 },
@@ -169,7 +169,7 @@ const s = StyleSheet.create({
     paddingHorizontal: 14, borderWidth: 1.5, borderColor: '#F0A030', alignSelf: 'flex-start',
   },
   btnPendenteTxt: { color: '#C07010', fontWeight: '700', fontSize: 12 },
-  deleteBtn: { width: 44, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FEE2E2' },
+  deleteBtn: { width: 52, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FEE2E2', borderTopRightRadius: 12, borderBottomRightRadius: 12 },
   deleteTxt: { color: '#C0392B', fontWeight: '800', fontSize: 15 },
   fab: { margin: 16, backgroundColor: '#1A6B5A', borderRadius: 12, padding: 16, alignItems: 'center' },
   fabText: { color: '#fff', fontSize: 16, fontWeight: '700' },
