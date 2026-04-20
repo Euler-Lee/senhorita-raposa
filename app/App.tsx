@@ -1,9 +1,6 @@
 import 'react-native-url-polyfill/auto';
 import React, { useEffect, useState } from 'react';
-import { View, ActivityIndicator } from 'react-native';
-import { NavigationContainer } from '@react-navigation/native';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { View, ActivityIndicator, Text } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Session } from '@supabase/supabase-js';
 import { supabase } from './lib/supabase';
@@ -129,12 +126,66 @@ function AppTabs() {
         },
       }}
     >
-      <Tab.Screen name="HomeTab" component={HomeNavigator} options={{ title: 'Início' }} />
-      <Tab.Screen name="IngredientesTab" component={IngredientesNavigator} options={{ title: 'Ingredientes' }} />
-      <Tab.Screen name="EmbalagensTb" component={EmbalagenNavigator} options={{ title: 'Embalagens' }} />
-      <Tab.Screen name="ProdutosTab" component={ProdutosNavigator} options={{ title: 'Produtos' }} />
-      <Tab.Screen name="ClientesTab" component={ClientesNavigator} options={{ title: 'Clientes' }} />
-      <Tab.Screen name="FinanceiroTab" component={FinanceiroNavigator} options={{ title: 'Financeiro' }} />
+      <Tab.Screen
+        name="HomeTab"
+        component={HomeNavigator}
+        options={{
+          title: 'Início',
+          tabBarIcon: ({ focused }) => (
+            <Text style={{ fontSize: 20, opacity: focused ? 1 : 0.6 }}>🏠</Text>
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="IngredientesTab"
+        component={IngredientesNavigator}
+        options={{
+          title: 'Ingredientes',
+          tabBarIcon: ({ focused }) => (
+            <Text style={{ fontSize: 20, opacity: focused ? 1 : 0.6 }}>🥕</Text>
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="EmbalagensTb"
+        component={EmbalagenNavigator}
+        options={{
+          title: 'Embalagens',
+          tabBarIcon: ({ focused }) => (
+            <Text style={{ fontSize: 20, opacity: focused ? 1 : 0.6 }}>📦</Text>
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="ProdutosTab"
+        component={ProdutosNavigator}
+        options={{
+          title: 'Produtos',
+          tabBarIcon: ({ focused }) => (
+            <Text style={{ fontSize: 20, opacity: focused ? 1 : 0.6 }}>🍳</Text>
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="ClientesTab"
+        component={ClientesNavigator}
+        options={{
+          title: 'Clientes',
+          tabBarIcon: ({ focused }) => (
+            <Text style={{ fontSize: 20, opacity: focused ? 1 : 0.6 }}>👥</Text>
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="FinanceiroTab"
+        component={FinanceiroNavigator}
+        options={{
+          title: 'Financeiro',
+          tabBarIcon: ({ focused }) => (
+            <Text style={{ fontSize: 20, opacity: focused ? 1 : 0.6 }}>📊</Text>
+          ),
+        }}
+      />
     </Tab.Navigator>
   );
 }

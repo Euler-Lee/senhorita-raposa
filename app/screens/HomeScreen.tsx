@@ -1,13 +1,13 @@
 import React from 'react';
 import {
   View, Text, TouchableOpacity, StyleSheet,
-  ScrollView, StatusBar, useWindowDimensions,
+  ScrollView, StatusBar,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { supabase } from '../lib/supabase';
 import FoxBackground from '../components/FoxBackground';
 import AnimatedPressable from '../components/AnimatedPressable';
-import { colors, fontSize, fontWeight, space, radius, shadow } from '../lib/theme';
+import { colors } from '../lib/theme';
 
 const MODULES = [
   {
@@ -63,29 +63,15 @@ const MODULES = [
 ] as const;
 
 export default function HomeScreen({ navigation }: any) {
-  const { width } = useWindowDimensions();
-  const isDesktop = width >= 960;
-  const isTablet  = width >= 600;
-  const HPAD    = isDesktop ? 48 : 20;
-  const CARD_GAP = isDesktop ? 16 : 12;
-  const NUM_COLS = isDesktop ? 3 : 2;
-  const MAX_W   = 1140;
-  const innerWidth = Math.min(width, MAX_W) - HPAD * 2;
-  const cardW = (innerWidth - CARD_GAP * (NUM_COLS - 1)) / NUM_COLS;
-
   return (
     <SafeAreaView style={s.safe} edges={['top']}>
       <StatusBar barStyle="dark-content" backgroundColor={colors.bg} />
       <FoxBackground opacity={0.028} />
       <ScrollView
-        contentContainerStyle={[
-          s.scroll,
-          { paddingHorizontal: HPAD },
-          isDesktop && s.scrollDesktop,
-        ]}
+        contentContainerStyle={s.scroll}
         showsVerticalScrollIndicator={false}
       >
-        <View style={[s.header, isTablet && s.headerTablet]}>
+        <View style={s.header}>
           <View style={s.brand}>
             <Text style={s.brandName}>Senhorita Raposa</Text>
             <Text style={s.brandTag}>Precificação inteligente para o seu negócio</Text>
@@ -101,16 +87,14 @@ export default function HomeScreen({ navigation }: any) {
 
         <View style={s.divider} />
 
-        <Text style={[s.sectionLabel, isTablet && s.sectionLabelTablet]}>
-          Módulos do sistema
-        </Text>
+        <Text style={s.sectionLabel}>Módulos do sistema</Text>
 
-        <View style={[s.grid, { gap: CARD_GAP }]}>
+        <View style={s.grid}>
           {MODULES.map((m) => (
             <AnimatedPressable
               key={m.key}
-              style={[s.card, { width: cardW, backgroundColor: m.bg, borderColor: m.border }]}
-              onPress={() => navigation.navigate(m.tab)}
+              style={[s.card, { backgroundColor: m.bg, borderColor: m.border }]}
+              onPress={() => navigation.getParent()?.navigate(m.tab)}
             >
               <View style={[s.iconWrap, { backgroundColor: m.accent + '18' }]}>
                 <Text style={s.iconEmoji}>{m.icon}</Text>
@@ -130,15 +114,13 @@ export default function HomeScreen({ navigation }: any) {
 
 const s = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bg },
-  scroll: { paddingTop: 20, paddingBottom: 40 },
-  scrollDesktop: { alignSelf: 'center', width: '100%', maxWidth: 1140 },
+  scroll: { paddingTop: 20, paddingBottom: 40, paddingHorizontal: 20 },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
     marginBottom: 20,
   },
-  headerTablet: { alignItems: 'center' },
   brand: { flex: 1, marginRight: 16 },
   brandName: {
     fontSize: 24,
@@ -165,13 +147,13 @@ const s = StyleSheet.create({
     letterSpacing: 0.8,
     marginBottom: 16,
   },
-  sectionLabelTablet: { marginBottom: 20 },
-  grid: { flexDirection: 'row', flexWrap: 'wrap' },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
   card: {
     borderRadius: 16,
     borderWidth: 1,
     padding: 16,
     minHeight: 148,
+    width: '47%',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.06,
