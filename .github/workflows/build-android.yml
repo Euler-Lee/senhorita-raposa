@@ -1,0 +1,77 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install dependencies
+        working-directory: app
+        run: npm ci
+
+      - name: Expo prebuild
+        working-directory: app
+        env:
+          EXPO_PUBLIC_SUPABASE_URL: https://rhpafjqhveikaqalivqj.supabase.co
+          EXPO_PUBLIC_SUPABASE_ANON_KEY: sb_publishable_ZGL98ZLiHfVSgYWptvG-_Q_WS8X7joy
+        run: npx expo prebuild --platform android --no-install
+
+      - name: Build APK (release)
+        working-directory: app/android
+        env:
+          EXPO_PUBLIC_SUPABASE_URL: https://rhpafjqhveikaqalivqj.supabase.co
+          EXPO_PUBLIC_SUPABASE_ANON_KEY: sb_publishable_ZGL98ZLiHfVSgYWptvG-_Q_WS8X7joy
+        run: ./gradlew assembleRelease --no-daemon
+
+      - name: Rename APK
+        run: |
+          VERSION=$(node -p "require('./app/app.json').expo.version")
+          TIMESTAMP=$(date +%Y%m%d-%H%M)
+          cp app/android/app/build/outputs/apk/release/app-release.apk \
+             senhorita-raposa-v${VERSION}-${TIMESTAMP}.apk
+
+      - name: Upload APK as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: senhorita-raposa-apk
+          path: senhorita-raposa-*.apk
+          retention-days: 30
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: build-${{ github.run_number }}
+          name: "Build #${{ github.run_number }}"
+          body: |
+            APK gerado automaticamente pelo GitHub Actions.
+            Commit: ${{ github.sha }}
+          files: senhorita-raposa-*.apk
+          make_latest: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
