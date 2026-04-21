@@ -14,14 +14,14 @@ export default function AnimatedPressable({ children, onPress, style, disabled }
 
   function animIn() {
     Animated.parallel([
-      Animated.spring(scale, { toValue: 1.055, useNativeDriver: true, speed: 40, bounciness: 12 }),
+      Animated.spring(scale, { toValue: 1.055, useNativeDriver: false, speed: 40, bounciness: 12 }),
       Animated.timing(borderOpacity, { toValue: 1, duration: 80, useNativeDriver: false }),
     ]).start();
   }
 
   function animOut() {
     Animated.parallel([
-      Animated.spring(scale, { toValue: 1, useNativeDriver: true, speed: 18, bounciness: 8 }),
+      Animated.spring(scale, { toValue: 1, useNativeDriver: false, speed: 18, bounciness: 8 }),
       Animated.timing(borderOpacity, { toValue: 0, duration: 280, useNativeDriver: false }),
     ]).start();
   }
