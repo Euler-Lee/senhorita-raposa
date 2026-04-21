@@ -40,7 +40,6 @@ import FinanceiroScreen from './screens/FinanceiroScreen';
 
 const AuthStack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
-const HomeStack = createNativeStackNavigator();
 const IngredientesStack = createNativeStackNavigator();
 const EmbalagensSt = createNativeStackNavigator();
 const ProdutosStack = createNativeStackNavigator();
@@ -51,14 +50,6 @@ const HEADER = hs.default;
 const HEADER_VERDE = hs.green;
 const HEADER_AZUL = hs.blue;
 const HEADER_ROXO = hs.purple;
-
-function HomeNavigator() {
-  return (
-    <HomeStack.Navigator screenOptions={{ headerShown: false }}>
-      <HomeStack.Screen name="Home" component={HomeScreen} />
-    </HomeStack.Navigator>
-  );
-}
 
 function IngredientesNavigator() {
   return (
@@ -131,7 +122,7 @@ function AppTabs() {
     >
       <Tab.Screen
         name="HomeTab"
-        component={HomeNavigator}
+        component={HomeScreen}
         options={{
           title: 'Início',
           tabBarIcon: ({ focused }) => (
