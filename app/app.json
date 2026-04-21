@@ -2,6 +2,7 @@
   "expo": {
     "name": "Senhorita Raposa",
     "slug": "senhorita-raposa",
+    "scheme": "sra",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -31,6 +32,9 @@
         "projectId": "8389ffcf-8f3d-4b32-96bb-9e49fcb8b4b4"
       }
     },
-    "owner": "eulerlee"
+    "owner": "eulerlee",
+    "plugins": [
+      "expo-web-browser"
+    ]
   }
 }

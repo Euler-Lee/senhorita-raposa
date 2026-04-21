@@ -4,6 +4,8 @@ import {
   Alert, ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView,
 } from 'react-native';
 import { supabase } from '../../lib/supabase';
+import FoxBackground from '../../components/FoxBackground';
+import { colors, fontSize, fontWeight, radius, shadow, space } from '../../lib/theme';
 
 export default function SignupScreen({ navigation }: any) {
   const [email, setEmail] = useState('');
@@ -12,7 +14,7 @@ export default function SignupScreen({ navigation }: any) {
 
   async function handleSignup() {
     if (!email.trim() || !password) {
-      Alert.alert('Campos obrigatorios', 'Preencha todos os campos.');
+      Alert.alert('Campos obrigatórios', 'Preencha todos os campos.');
       return;
     }
     if (password.length < 6) {
@@ -26,21 +28,25 @@ export default function SignupScreen({ navigation }: any) {
       Alert.alert('Erro ao criar conta', error.message);
       return;
     }
-    Alert.alert('Conta criada', 'Verifique seu e-mail para confirmar o cadastro.', [
-      { text: 'OK', onPress: () => navigation.goBack() },
-    ]);
+    Alert.alert(
+      'Conta criada! 🦊',
+      'Verifique seu e-mail para confirmar o cadastro antes de entrar.',
+      [{ text: 'OK', onPress: () => navigation.goBack() }],
+    );
   }
 
   return (
     <KeyboardAvoidingView style={styles.root} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <FoxBackground opacity={0.04} />
       <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+        <Text style={styles.foxEmoji}>🦊</Text>
         <Text style={styles.title}>Criar Conta</Text>
-        <Text style={styles.subtitle}>Senhorita Raposa</Text>
+        <Text style={styles.subtitle}>Junte-se à Senhorita Raposa</Text>
 
         <TextInput
           style={styles.input}
           placeholder="E-mail"
-          placeholderTextColor="#B08A78"
+          placeholderTextColor={colors.text3}
           value={email}
           onChangeText={setEmail}
           autoCapitalize="none"
@@ -48,8 +54,8 @@ export default function SignupScreen({ navigation }: any) {
         />
         <TextInput
           style={styles.input}
-          placeholder="Senha (min. 6 caracteres)"
-          placeholderTextColor="#B08A78"
+          placeholder="Senha (mínimo 6 caracteres)"
+          placeholderTextColor={colors.text3}
           value={password}
           onChangeText={setPassword}
           secureTextEntry
@@ -61,8 +67,8 @@ export default function SignupScreen({ navigation }: any) {
             : <Text style={styles.buttonText}>Criar conta</Text>}
         </TouchableOpacity>
 
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={styles.link}>Ja tem conta? Entrar</Text>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.linkWrap}>
+          <Text style={styles.link}>Já tem conta? <Text style={styles.linkBold}>Entrar</Text></Text>
         </TouchableOpacity>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -70,19 +76,25 @@ export default function SignupScreen({ navigation }: any) {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#FFF8F4' },
-  container: { flexGrow: 1, justifyContent: 'center', padding: 28 },
-  title: { fontSize: 28, fontWeight: '800', color: '#D45C2A', textAlign: 'center', marginBottom: 4 },
-  subtitle: { fontSize: 15, color: '#8A6A5A', textAlign: 'center', marginBottom: 48 },
+  root: { flex: 1, backgroundColor: colors.bg },
+  container: { flexGrow: 1, justifyContent: 'center', paddingHorizontal: 28, paddingVertical: 40 },
+  foxEmoji: { fontSize: 56, textAlign: 'center', marginBottom: 8 },
+  title: { fontSize: 32, fontWeight: fontWeight.black, color: colors.primary, textAlign: 'center', marginBottom: 4 },
+  subtitle: { fontSize: fontSize.sm, color: colors.text2, textAlign: 'center', marginBottom: 40 },
   input: {
-    borderWidth: 1.5, borderColor: '#EDD9C8', borderRadius: 12,
-    padding: 14, fontSize: 16, color: '#2D1B10',
-    backgroundColor: '#fff', marginBottom: 14,
+    borderWidth: 1.5, borderColor: colors.foxBorder, borderRadius: radius.lg,
+    paddingHorizontal: 16, paddingVertical: 14,
+    fontSize: fontSize.base, color: colors.text1,
+    backgroundColor: colors.surface, marginBottom: 12,
+    ...shadow.xs,
   },
   button: {
-    backgroundColor: '#D45C2A', borderRadius: 12,
-    padding: 16, alignItems: 'center', marginTop: 8, marginBottom: 20,
+    backgroundColor: colors.primary, borderRadius: radius.lg,
+    paddingVertical: 16, alignItems: 'center', marginTop: 4, marginBottom: 16,
+    ...shadow.sm,
   },
-  buttonText: { color: '#fff', fontSize: 16, fontWeight: '700' },
-  link: { color: '#D45C2A', textAlign: 'center', fontSize: 14 },
+  buttonText: { color: '#fff', fontSize: fontSize.base, fontWeight: fontWeight.bold },
+  linkWrap: { marginTop: 8 },
+  link: { color: colors.text2, textAlign: 'center', fontSize: fontSize.sm },
+  linkBold: { color: colors.primary, fontWeight: fontWeight.bold },
 });
