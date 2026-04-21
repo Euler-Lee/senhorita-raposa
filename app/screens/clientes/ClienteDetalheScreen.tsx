@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import {
   View, Text, FlatList, TouchableOpacity,
-  StyleSheet, ActivityIndicator, Linking, Alert,
+  StyleSheet, ActivityIndicator, Linking,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { supabase } from '../../lib/supabase';
@@ -10,16 +10,8 @@ import ConfirmDialog from '../../components/ConfirmDialog';
 
 function abrirWhatsApp(telefone: string) {
   const digitos = telefone.replace(/\D/g, '');
-  // Adiciona código do Brasil (55) se não começar com ele e tiver 10-11 dígitos
   const numero = digitos.startsWith('55') ? digitos : `55${digitos}`;
-  const url = `whatsapp://send?phone=${numero}`;
-  Linking.canOpenURL(url).then(suportado => {
-    if (suportado) {
-      Linking.openURL(url);
-    } else {
-      Alert.alert('WhatsApp não encontrado', 'O WhatsApp não está instalado neste dispositivo.');
-    }
-  });
+  Linking.openURL(`https://wa.me/${numero}`);
 }
 
 export default function ClienteDetalheScreen({ route, navigation }: any) {
@@ -93,9 +85,17 @@ export default function ClienteDetalheScreen({ route, navigation }: any) {
       </View>
 
       {telefone ? (
-        <TouchableOpacity style={s.waBanner} onPress={() => abrirWhatsApp(telefone)}>
-          <Text style={s.waBannerTxt}>💬 {telefone}</Text>
-          <Text style={s.waBannerAcao}>Abrir no WhatsApp →</Text>
+        <TouchableOpacity style={s.waBanner} onPress={() => abrirWhatsApp(telefone)} activeOpacity={0.75}>
+          <View style={s.waBannerEsq}>
+            <Text style={s.waBannerIcon}>💬</Text>
+            <View>
+              <Text style={s.waBannerTel}>{telefone}</Text>
+              <Text style={s.waBannerSub}>Toque para abrir no WhatsApp</Text>
+            </View>
+          </View>
+          <View style={s.waBannerBotao}>
+            <Text style={s.waBannerBotaoTxt}>Abrir →</Text>
+          </View>
         </TouchableOpacity>
       ) : null}
 
@@ -183,10 +183,17 @@ const s = StyleSheet.create({
   waBanner: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
     backgroundColor: '#E7F9EF', borderBottomWidth: 1, borderColor: '#B2DFCA',
-    paddingHorizontal: 16, paddingVertical: 10,
+    paddingHorizontal: 16, paddingVertical: 14,
   },
-  waBannerTxt: { fontSize: 14, color: '#0D2B24', fontWeight: '600' },
-  waBannerAcao: { fontSize: 13, color: '#25D366', fontWeight: '700' },
+  waBannerEsq: { flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 },
+  waBannerIcon: { fontSize: 28 },
+  waBannerTel: { fontSize: 15, color: '#0D2B24', fontWeight: '700' },
+  waBannerSub: { fontSize: 12, color: '#4A7A6A', marginTop: 1 },
+  waBannerBotao: {
+    backgroundColor: '#25D366', borderRadius: 20,
+    paddingVertical: 8, paddingHorizontal: 16,
+  },
+  waBannerBotaoTxt: { color: '#fff', fontWeight: '800', fontSize: 14 },
   list: { padding: 16, paddingBottom: 90 },
   emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 40 },
   empty: { color: '#5A8A7A', fontSize: 15, textAlign: 'center', lineHeight: 24 },

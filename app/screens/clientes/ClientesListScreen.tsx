@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import {
   View, Text, FlatList, TouchableOpacity,
-  StyleSheet, TextInput, RefreshControl, Linking, Alert,
+  StyleSheet, TextInput, RefreshControl, Linking,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import * as Haptics from 'expo-haptics';
@@ -15,15 +15,8 @@ import type { Cliente } from '../../lib/types';
 function abrirWhatsApp(telefone: string) {
   const digitos = telefone.replace(/\D/g, '');
   const numero = digitos.startsWith('55') ? digitos : `55${digitos}`;
-  const url = `whatsapp://send?phone=${numero}`;
-  Linking.canOpenURL(url).then(suportado => {
-    if (suportado) {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      Linking.openURL(url);
-    } else {
-      Alert.alert('WhatsApp não encontrado', 'O WhatsApp não está instalado neste dispositivo.');
-    }
-  });
+  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  Linking.openURL(`https://wa.me/${numero}`);
 }
 
 export default function ClientesListScreen({ navigation }: any) {
