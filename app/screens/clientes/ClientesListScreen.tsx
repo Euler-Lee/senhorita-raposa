@@ -1,10 +1,11 @@
 import React, { useState, useCallback } from 'react';
 import {
   View, Text, FlatList, TouchableOpacity,
-  StyleSheet, ActivityIndicator,
+  StyleSheet,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { supabase } from '../../lib/supabase';
+import FoxLoader from '../../components/FoxLoader';
 import ConfirmDialog from '../../components/ConfirmDialog';
 import { colors, fontSize, fontWeight, radius, shadow, space } from '../../lib/theme';
 
@@ -33,9 +34,7 @@ export default function ClientesListScreen({ navigation }: any) {
     load();
   }
 
-  if (loading) {
-    return <View style={styles.center}><ActivityIndicator color="#1A6B5A" size="large" /></View>;
-  }
+  if (loading) return <FoxLoader />;
 
   return (
     <View style={styles.container}>
@@ -63,10 +62,14 @@ export default function ClientesListScreen({ navigation }: any) {
                 style={styles.editBtn}
                 onPress={() => navigation.navigate('ClienteForm', { id: item.id })}
               >
-                <Text style={styles.editTxt}>Ed.</Text>
+                <View style={styles.editBtnInner}>
+                  <Text style={styles.editTxt}>✏️</Text>
+                </View>
               </TouchableOpacity>
               <TouchableOpacity style={styles.deleteBtn} onPress={() => handleDelete(item.id)}>
-                <Text style={styles.deleteTxt}>X</Text>
+                <View style={styles.deleteBtnInner}>
+                  <Text style={styles.deleteTxt}>✕</Text>
+                </View>
               </TouchableOpacity>
             </View>
           </View>
@@ -106,10 +109,22 @@ const styles = StyleSheet.create({
   nome: { fontSize: fontSize.base, fontWeight: fontWeight.bold, color: colors.text1 },
   tel: { fontSize: fontSize.sm, color: colors.text2, marginTop: 2 },
   actions: { flexDirection: 'column' },
-  editBtn: { flex: 1, width: 52, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.greenBg },
-  editTxt: { color: colors.green, fontWeight: fontWeight.bold, fontSize: fontSize.xs },
-  deleteBtn: { flex: 1, width: 52, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.dangerBg, borderTopRightRadius: radius.md, borderBottomRightRadius: radius.md },
-  deleteTxt: { color: colors.danger, fontWeight: fontWeight.bold, fontSize: fontSize.base },
+  editBtn: { flex: 1, width: 52, justifyContent: 'center', alignItems: 'center' },
+  editBtnInner: {
+    width: 34, height: 34, borderRadius: 17,
+    borderWidth: 1.5, borderColor: colors.greenBorder,
+    backgroundColor: colors.greenBg,
+    justifyContent: 'center', alignItems: 'center',
+  },
+  editTxt: { fontSize: 14, lineHeight: 16 },
+  deleteBtn: { flex: 1, width: 52, justifyContent: 'center', alignItems: 'center', borderTopRightRadius: radius.md, borderBottomRightRadius: radius.md },
+  deleteBtnInner: {
+    width: 34, height: 34, borderRadius: 17,
+    borderWidth: 1.5, borderColor: '#F5C0BA',
+    backgroundColor: colors.dangerBg,
+    justifyContent: 'center', alignItems: 'center',
+  },
+  deleteTxt: { color: colors.danger, fontWeight: fontWeight.bold, fontSize: 13, lineHeight: 13 },
   fab: { margin: space[4], backgroundColor: colors.green, borderRadius: radius.md, padding: space[4], alignItems: 'center', ...shadow.sm },
   fabText: { color: '#fff', fontSize: fontSize.base, fontWeight: fontWeight.bold },
 });

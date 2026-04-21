@@ -6,27 +6,27 @@
 // ─── Cores ────────────────────────────────────────────────────────────────────
 export const colors = {
   // Marca (laranja-raposa — usado apenas como acento)
-  primary:     '#C05218',
-  primaryHover:'#A84414',
-  primaryBg:   '#FBF0EA',
-  primaryBgDeep:'#F4D9C9',
+  primary:     '#D05820',
+  primaryHover:'#B84416',
+  primaryBg:   '#FEF0E0',
+  primaryBgDeep:'#FCDCC3',
 
   // Backgrounds
-  bg:          '#F7F4F1',   // off-white quente — fundo principal
-  surface:     '#FFFFFF',   // cards e superfícies
+  bg:          '#FDF8F2',   // creme quente — fundo principal
+  surface:     '#FFFCF9',   // cards e superfícies
 
   // Texto
-  text1:       '#18110A',   // título / destaque
+  text1:       '#1A0F06',   // título / destaque
   text2:       '#6B5848',   // corpo / secundário
   text3:       '#A89180',   // placeholder / muted
 
   // Bordas
-  border:      '#E5DDD5',
-  borderLight: '#F0EAE3',
+  border:      '#E8DDD0',
+  borderLight: '#F2EBE2',
 
   // Módulos — acento + fundo suave
-  fox:        '#C05218',  foxBg:    '#FBF0EA',  foxBorder: '#F0C8A8',
-  purple:     '#6A30A0',  purpleBg: '#F3EEFF',  purpleBorder: '#CFAAF0',
+  fox:        '#D05820',  foxBg:    '#FEF0E0',  foxBorder: '#F5C898',
+  purple:     '#7230A8',  purpleBg: '#F4EEFF',  purpleBorder: '#D0AAEE',
   green:      '#1A6B4A',  greenBg:  '#EDFAF3',  greenBorder:  '#9ADCBC',
   blue:       '#1A527A',  blueBg:   '#EAF3FB',  blueBorder:   '#96C8EF',
 
@@ -69,9 +69,9 @@ export const space = {
 // ─── Raio de borda ────────────────────────────────────────────────────────────
 export const radius = {
   sm:   8,
-  md:   12,
-  lg:   16,
-  xl:   20,
+  md:   14,
+  lg:   18,
+  xl:   24,
   full: 9999,
 };
 

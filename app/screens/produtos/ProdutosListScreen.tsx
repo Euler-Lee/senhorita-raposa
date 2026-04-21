@@ -1,12 +1,13 @@
 import React, { useState, useCallback } from 'react';
 import {
   View, Text, FlatList, TouchableOpacity,
-  StyleSheet, ActivityIndicator,
+  StyleSheet,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { listarProdutosComCusto } from '../../lib/calculos';
 import { supabase } from '../../lib/supabase';
 import type { ProdutoComCusto } from '../../lib/types';
+import FoxLoader from '../../components/FoxLoader';
 import ConfirmDialog from '../../components/ConfirmDialog';
 import FoxBackground from '../../components/FoxBackground';
 import { colors, fontSize, fontWeight, radius, shadow, space } from '../../lib/theme';
@@ -36,9 +37,7 @@ export default function ProdutosListScreen({ navigation }: any) {
     load();
   }
 
-  if (loading) {
-    return <View style={styles.center}><ActivityIndicator color="#D45C2A" size="large" /></View>;
-  }
+  if (loading) return <FoxLoader />;
 
   return (
     <View style={styles.container}>
@@ -89,7 +88,9 @@ export default function ProdutosListScreen({ navigation }: any) {
                   <Text style={styles.editTxt}>Ed.</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.deleteBtn} onPress={() => handleDelete(item.id)}>
-                  <Text style={styles.deleteTxt}>X</Text>
+                  <View style={styles.deleteBtnInner}>
+                    <Text style={styles.deleteTxt}>✕</Text>
+                  </View>
                 </TouchableOpacity>
               </View>
             </View>
@@ -132,8 +133,14 @@ const styles = StyleSheet.create({
   actions: { flexDirection: 'column', justifyContent: 'center' },
   editBtn: { flex: 1, width: 52, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.primaryBg },
   editTxt: { color: colors.primary, fontWeight: fontWeight.bold, fontSize: fontSize.xs },
-  deleteBtn: { flex: 1, width: 52, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.dangerBg, borderTopRightRadius: radius.md, borderBottomRightRadius: radius.md },
-  deleteTxt: { color: colors.danger, fontWeight: fontWeight.heavy, fontSize: fontSize.base },
+  deleteBtn: { flex: 1, width: 52, justifyContent: 'center', alignItems: 'center' },
+  deleteBtnInner: {
+    width: 34, height: 34, borderRadius: 17,
+    borderWidth: 1.5, borderColor: '#F5C0BA',
+    backgroundColor: colors.dangerBg,
+    justifyContent: 'center', alignItems: 'center',
+  },
+  deleteTxt: { color: colors.danger, fontWeight: fontWeight.heavy, fontSize: 13, lineHeight: 13 },
   fab: { margin: space[4], backgroundColor: colors.primary, borderRadius: radius.md, padding: space[4], alignItems: 'center', ...shadow.sm },
   fabText: { color: '#fff', fontSize: fontSize.base, fontWeight: fontWeight.bold },
 });
