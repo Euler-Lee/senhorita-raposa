@@ -4,6 +4,7 @@ import {
   ScrollView, StatusBar, useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { TabActions } from '@react-navigation/native';
 import { supabase } from '../lib/supabase';
 import FoxBackground from '../components/FoxBackground';
 import AnimatedPressable from '../components/AnimatedPressable';
@@ -104,7 +105,7 @@ export default function HomeScreen({ navigation }: any) {
                 i % 2 === 1 && { marginLeft: GAP },
                 i >= 2 && { marginTop: GAP },
               ]}
-              onPress={() => navigation.navigate(m.tab)}
+              onPress={() => navigation.dispatch(TabActions.jumpTo(m.tab))}
             >
               <View style={[s.iconWrap, { backgroundColor: m.accent + '20' }]}>
                 <Text style={s.iconEmoji}>{m.icon}</Text>
