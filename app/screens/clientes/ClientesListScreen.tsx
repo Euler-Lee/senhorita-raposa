@@ -1,18 +1,27 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
   View, Text, FlatList, TouchableOpacity,
-  StyleSheet,
+  StyleSheet, TextInput, RefreshControl,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
+import * as Haptics from 'expo-haptics';
 import { supabase } from '../../lib/supabase';
 import FoxLoader from '../../components/FoxLoader';
+import FoxBackground from '../../components/FoxBackground';
 import ConfirmDialog from '../../components/ConfirmDialog';
 import { colors, fontSize, fontWeight, radius, shadow, space } from '../../lib/theme';
 
 export default function ClientesListScreen({ navigation }: any) {
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [confirmId, setConfirmId] = useState<string | null>(null);
+  const [busca, setBusca] = useState('');
+
+  const filtrados = useMemo(
+    () => clientes.filter(c => c.nome.toLowerCase().includes(busca.toLowerCase())),
+    [clientes, busca]
+  );
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -21,9 +30,17 @@ export default function ClientesListScreen({ navigation }: any) {
     setLoading(false);
   }, []);
 
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    const { data } = await supabase.from('clientes').select('*').order('nome');
+    setClientes((data as Cliente[]) ?? []);
+    setRefreshing(false);
+  }, []);
+
   useFocusEffect(load);
 
   async function handleDelete(id: string) {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setConfirmId(id);
   }
 
@@ -38,18 +55,34 @@ export default function ClientesListScreen({ navigation }: any) {
 
   return (
     <View style={styles.container}>
+      <FoxBackground opacity={0.04} />
+      <View style={styles.searchWrap}>
+        <TextInput
+          style={styles.search}
+          placeholder="Buscar cliente..."
+          placeholderTextColor={colors.text3}
+          value={busca}
+          onChangeText={setBusca}
+          clearButtonMode="while-editing"
+        />
+      </View>
       <FlatList
-        data={clientes}
+        data={filtrados}
         keyExtractor={i => i.id}
-        contentContainerStyle={clientes.length === 0 ? styles.emptyContainer : styles.list}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.green} colors={[colors.green]} />}
+        contentContainerStyle={filtrados.length === 0 ? styles.emptyContainer : styles.list}
         ListEmptyComponent={
-          <Text style={styles.empty}>Nenhum cliente cadastrado ainda.{'\n'}Adicione seus primeiros clientes.</Text>
+          <View style={styles.emptyWrap}>
+            <Text style={styles.emptyIcon}>👥</Text>
+            <Text style={styles.emptyTitle}>{busca ? 'Nenhum resultado' : 'Nenhum cliente ainda'}</Text>
+            <Text style={styles.emptySub}>{busca ? `Sem resultados para "${busca}"` : 'Adicione seus primeiros clientes.'}</Text>
+          </View>
         }
         renderItem={({ item }) => (
           <View style={styles.card}>
             <TouchableOpacity
               style={styles.cardContent}
-              onPress={() => navigation.navigate('ClienteDetalhe', { clienteId: item.id, nome: item.nome })}
+              onPress={() => { Haptics.selectionAsync(); navigation.navigate('ClienteDetalhe', { clienteId: item.id, nome: item.nome }); }}
             >
               <Text style={styles.avatar}>{item.nome.charAt(0).toUpperCase()}</Text>
               <View style={{ flex: 1 }}>
@@ -60,7 +93,7 @@ export default function ClientesListScreen({ navigation }: any) {
             <View style={styles.actions}>
               <TouchableOpacity
                 style={styles.editBtn}
-                onPress={() => navigation.navigate('ClienteForm', { id: item.id })}
+                onPress={() => { Haptics.selectionAsync(); navigation.navigate('ClienteForm', { id: item.id }); }}
               >
                 <View style={styles.editBtnInner}>
                   <Text style={styles.editTxt}>✏️</Text>
@@ -75,7 +108,7 @@ export default function ClientesListScreen({ navigation }: any) {
           </View>
         )}
       />
-      <TouchableOpacity style={styles.fab} onPress={() => navigation.navigate('ClienteForm')}>
+      <TouchableOpacity style={styles.fab} onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); navigation.navigate('ClienteForm'); }}>
         <Text style={styles.fabText}>+ Novo Cliente</Text>
       </TouchableOpacity>
       <ConfirmDialog
@@ -94,7 +127,19 @@ const styles = StyleSheet.create({
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.bg },
   list: { padding: space[4], paddingBottom: 90 },
   emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: space[10] },
+  emptyWrap: { alignItems: 'center', paddingHorizontal: 32 },
+  emptyIcon: { fontSize: 56, marginBottom: 16 },
+  emptyTitle: { fontSize: fontSize.md, fontWeight: fontWeight.bold, color: colors.text1, marginBottom: 8, textAlign: 'center' },
+  emptySub: { fontSize: fontSize.sm, color: colors.text2, textAlign: 'center', lineHeight: 22 },
   empty: { color: colors.text2, fontSize: fontSize.base, textAlign: 'center', lineHeight: 24 },
+  searchWrap: { paddingHorizontal: space[4], paddingTop: space[3], paddingBottom: space[2] },
+  search: {
+    backgroundColor: colors.surface, borderRadius: radius.md,
+    borderWidth: 1, borderColor: colors.border,
+    paddingHorizontal: 14, paddingVertical: 10,
+    fontSize: fontSize.base, color: colors.text1,
+    ...shadow.xs,
+  },
   card: {
     backgroundColor: colors.surface, borderRadius: radius.md, marginBottom: space[3],
     flexDirection: 'row', alignItems: 'stretch',

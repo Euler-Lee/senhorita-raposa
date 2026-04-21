@@ -1,9 +1,10 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
   View, Text, FlatList, TouchableOpacity,
-  StyleSheet,
+  StyleSheet, TextInput, RefreshControl,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
+import * as Haptics from 'expo-haptics';
 import { supabase } from '../../lib/supabase';
 import type { Insumo } from '../../lib/types';
 import FoxBackground from '../../components/FoxBackground';
@@ -14,7 +15,14 @@ import { colors, fontSize, fontWeight, radius, shadow, space } from '../../lib/t
 export default function InsumosListScreen({ navigation }: any) {
   const [insumos, setInsumos] = useState<Insumo[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [confirmId, setConfirmId] = useState<string | null>(null);
+  const [busca, setBusca] = useState('');
+
+  const filtrados = useMemo(
+    () => insumos.filter(i => i.nome.toLowerCase().includes(busca.toLowerCase())),
+    [insumos, busca]
+  );
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -23,9 +31,17 @@ export default function InsumosListScreen({ navigation }: any) {
     setLoading(false);
   }, []);
 
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    const { data, error } = await supabase.from('insumos').select('*').order('nome');
+    if (!error && data) setInsumos(data as Insumo[]);
+    setRefreshing(false);
+  }, []);
+
   useFocusEffect(load);
 
   async function handleDelete(id: string) {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setConfirmId(id);
   }
 
@@ -41,12 +57,27 @@ export default function InsumosListScreen({ navigation }: any) {
   return (
     <View style={styles.container}>
       <FoxBackground opacity={0.04} />
+      <View style={styles.searchWrap}>
+        <TextInput
+          style={styles.search}
+          placeholder="Buscar ingrediente..."
+          placeholderTextColor={colors.text3}
+          value={busca}
+          onChangeText={setBusca}
+          clearButtonMode="while-editing"
+        />
+      </View>
       <FlatList
-        data={insumos}
+        data={filtrados}
         keyExtractor={item => item.id}
-        contentContainerStyle={insumos.length === 0 ? styles.emptyContainer : styles.list}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} colors={[colors.primary]} />}
+        contentContainerStyle={filtrados.length === 0 ? styles.emptyContainer : styles.list}
         ListEmptyComponent={
-          <Text style={styles.empty}>Nenhum ingrediente cadastrado ainda.{"\n"}Adicione seus ingredientes e materiais.</Text>
+          <View style={styles.emptyWrap}>
+            <Text style={styles.emptyIcon}>🥕</Text>
+            <Text style={styles.emptyTitle}>{busca ? 'Nenhum resultado' : 'Nenhum ingrediente ainda'}</Text>
+            <Text style={styles.emptySub}>{busca ? `Sem resultados para "${busca}"` : 'Adicione seus ingredientes e materiais.'}</Text>
+          </View>
         }
         renderItem={({ item }) => {
           const custoUnit = Number(item.preco_custo) / Number(item.quantidade_embalagem);
@@ -58,7 +89,7 @@ export default function InsumosListScreen({ navigation }: any) {
             <View style={styles.card}>
               <TouchableOpacity
                 style={styles.cardContent}
-                onPress={() => navigation.navigate('InsumoForm', { id: item.id })}
+                onPress={() => { Haptics.selectionAsync(); navigation.navigate('InsumoForm', { id: item.id }); }}
               >
                 <Text style={styles.nome}>{item.nome}</Text>
                 <Text style={styles.meta}>
@@ -77,7 +108,7 @@ export default function InsumosListScreen({ navigation }: any) {
           );
         }}
       />
-      <TouchableOpacity style={styles.fab} onPress={() => navigation.navigate('InsumoForm')}>
+      <TouchableOpacity style={styles.fab} onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); navigation.navigate('InsumoForm'); }}>
         <Text style={styles.fabText}>+ Novo Ingrediente</Text>
       </TouchableOpacity>
       <ConfirmDialog
@@ -96,7 +127,19 @@ const styles = StyleSheet.create({
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.bg },
   list: { padding: space[4], paddingBottom: 90 },
   emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: space[10] },
+  emptyWrap: { alignItems: 'center', paddingHorizontal: 32 },
+  emptyIcon: { fontSize: 56, marginBottom: 16 },
+  emptyTitle: { fontSize: fontSize.md, fontWeight: fontWeight.bold, color: colors.text1, marginBottom: 8, textAlign: 'center' },
+  emptySub: { fontSize: fontSize.sm, color: colors.text2, textAlign: 'center', lineHeight: 22 },
   empty: { color: colors.text2, fontSize: fontSize.base, textAlign: 'center', lineHeight: 24 },
+  searchWrap: { paddingHorizontal: space[4], paddingTop: space[3], paddingBottom: space[2] },
+  search: {
+    backgroundColor: colors.surface, borderRadius: radius.md,
+    borderWidth: 1, borderColor: colors.border,
+    paddingHorizontal: 14, paddingVertical: 10,
+    fontSize: fontSize.base, color: colors.text1,
+    ...shadow.xs,
+  },
   card: {
     backgroundColor: colors.surface, borderRadius: radius.md, marginBottom: space[3],
     flexDirection: 'row', alignItems: 'stretch',

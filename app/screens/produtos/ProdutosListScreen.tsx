@@ -1,9 +1,10 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
   View, Text, FlatList, TouchableOpacity,
-  StyleSheet,
+  StyleSheet, TextInput, RefreshControl,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
+import * as Haptics from 'expo-haptics';
 import { listarProdutosComCusto } from '../../lib/calculos';
 import { supabase } from '../../lib/supabase';
 import type { ProdutoComCusto } from '../../lib/types';
@@ -15,7 +16,14 @@ import { colors, fontSize, fontWeight, radius, shadow, space } from '../../lib/t
 export default function ProdutosListScreen({ navigation }: any) {
   const [produtos, setProdutos] = useState<ProdutoComCusto[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [confirmId, setConfirmId] = useState<string | null>(null);
+  const [busca, setBusca] = useState('');
+
+  const filtrados = useMemo(
+    () => produtos.filter(p => p.nome.toLowerCase().includes(busca.toLowerCase())),
+    [produtos, busca]
+  );
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -24,9 +32,17 @@ export default function ProdutosListScreen({ navigation }: any) {
     setLoading(false);
   }, []);
 
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    const data = await listarProdutosComCusto();
+    setProdutos(data);
+    setRefreshing(false);
+  }, []);
+
   useFocusEffect(load);
 
   async function handleDelete(id: string) {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setConfirmId(id);
   }
 
@@ -42,12 +58,27 @@ export default function ProdutosListScreen({ navigation }: any) {
   return (
     <View style={styles.container}>
       <FoxBackground opacity={0.04} />
+      <View style={styles.searchWrap}>
+        <TextInput
+          style={styles.search}
+          placeholder="Buscar produto..."
+          placeholderTextColor={colors.text3}
+          value={busca}
+          onChangeText={setBusca}
+          clearButtonMode="while-editing"
+        />
+      </View>
       <FlatList
-        data={produtos}
+        data={filtrados}
         keyExtractor={item => item.id}
-        contentContainerStyle={produtos.length === 0 ? styles.emptyContainer : styles.list}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} colors={[colors.primary]} />}
+        contentContainerStyle={filtrados.length === 0 ? styles.emptyContainer : styles.list}
         ListEmptyComponent={
-          <Text style={styles.empty}>Nenhum produto cadastrado ainda.{'\n'}Crie seu primeiro produto para precificar.</Text>
+          <View style={styles.emptyWrap}>
+            <Text style={styles.emptyIcon}>🍳</Text>
+            <Text style={styles.emptyTitle}>{busca ? 'Nenhum resultado' : 'Nenhum produto ainda'}</Text>
+            <Text style={styles.emptySub}>{busca ? `Sem resultados para "${busca}"` : 'Crie seu primeiro produto para precificar.'}</Text>
+          </View>
         }
         renderItem={({ item }) => {
           const margem = item.margem_calculada !== null ? Number(item.margem_calculada) : null;
@@ -56,7 +87,7 @@ export default function ProdutosListScreen({ navigation }: any) {
             <View style={styles.card}>
               <TouchableOpacity
                 style={styles.cardContent}
-                onPress={() => navigation.navigate('Precificacao', { produtoId: item.id })}
+                onPress={() => { Haptics.selectionAsync(); navigation.navigate('Precificacao', { produtoId: item.id }); }}
               >
                 <Text style={styles.nome}>{item.nome}</Text>
                 <View style={styles.row}>
@@ -83,7 +114,7 @@ export default function ProdutosListScreen({ navigation }: any) {
               <View style={styles.actions}>
                 <TouchableOpacity
                   style={styles.editBtn}
-                  onPress={() => navigation.navigate('ProdutoForm', { id: item.id })}
+                  onPress={() => { Haptics.selectionAsync(); navigation.navigate('ProdutoForm', { id: item.id }); }}
                 >
                   <Text style={styles.editTxt}>Ed.</Text>
                 </TouchableOpacity>
@@ -97,7 +128,7 @@ export default function ProdutosListScreen({ navigation }: any) {
           );
         }}
       />
-      <TouchableOpacity style={styles.fab} onPress={() => navigation.navigate('ProdutoForm')}>
+      <TouchableOpacity style={styles.fab} onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); navigation.navigate('ProdutoForm'); }}>
         <Text style={styles.fabText}>+ Novo Produto</Text>
       </TouchableOpacity>
       <ConfirmDialog
@@ -116,7 +147,19 @@ const styles = StyleSheet.create({
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.bg },
   list: { padding: space[4], paddingBottom: 90 },
   emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: space[10] },
+  emptyWrap: { alignItems: 'center', paddingHorizontal: 32 },
+  emptyIcon: { fontSize: 56, marginBottom: 16 },
+  emptyTitle: { fontSize: fontSize.md, fontWeight: fontWeight.bold, color: colors.text1, marginBottom: 8, textAlign: 'center' },
+  emptySub: { fontSize: fontSize.sm, color: colors.text2, textAlign: 'center', lineHeight: 22 },
   empty: { color: colors.text2, fontSize: fontSize.base, textAlign: 'center', lineHeight: 24 },
+  searchWrap: { paddingHorizontal: space[4], paddingTop: space[3], paddingBottom: space[2] },
+  search: {
+    backgroundColor: colors.surface, borderRadius: radius.md,
+    borderWidth: 1, borderColor: colors.border,
+    paddingHorizontal: 14, paddingVertical: 10,
+    fontSize: fontSize.base, color: colors.text1,
+    ...shadow.xs,
+  },
   card: {
     backgroundColor: colors.surface, borderRadius: radius.md, marginBottom: space[3],
     flexDirection: 'row', alignItems: 'stretch',

@@ -1,9 +1,10 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
   View, Text, FlatList, TouchableOpacity,
-  StyleSheet,
+  StyleSheet, TextInput, RefreshControl,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
+import * as Haptics from 'expo-haptics';
 import { supabase } from '../../lib/supabase';
 import type { Embalagem } from '../../lib/types';
 import FoxBackground from '../../components/FoxBackground';
@@ -14,7 +15,14 @@ import { colors, fontSize, fontWeight, radius, shadow, space } from '../../lib/t
 export default function EmbalagensList({ navigation }: any) {
   const [embalagens, setEmbalagens] = useState<Embalagem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [confirmId, setConfirmId] = useState<string | null>(null);
+  const [busca, setBusca] = useState('');
+
+  const filtrados = useMemo(
+    () => embalagens.filter(e => e.nome.toLowerCase().includes(busca.toLowerCase())),
+    [embalagens, busca]
+  );
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -23,9 +31,17 @@ export default function EmbalagensList({ navigation }: any) {
     setLoading(false);
   }, []);
 
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    const { data } = await supabase.from('embalagens').select('*').order('nome');
+    setEmbalagens((data as Embalagem[]) ?? []);
+    setRefreshing(false);
+  }, []);
+
   useFocusEffect(load);
 
   async function handleDelete(id: string) {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setConfirmId(id);
   }
 
@@ -41,12 +57,27 @@ export default function EmbalagensList({ navigation }: any) {
   return (
     <View style={s.container}>
       <FoxBackground opacity={0.04} />
+      <View style={s.searchWrap}>
+        <TextInput
+          style={s.search}
+          placeholder="Buscar embalagem..."
+          placeholderTextColor={colors.text3}
+          value={busca}
+          onChangeText={setBusca}
+          clearButtonMode="while-editing"
+        />
+      </View>
       <FlatList
-        data={embalagens}
+        data={filtrados}
         keyExtractor={i => i.id}
-        contentContainerStyle={embalagens.length === 0 ? s.emptyContainer : s.list}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.purple} colors={[colors.purple]} />}
+        contentContainerStyle={filtrados.length === 0 ? s.emptyContainer : s.list}
         ListEmptyComponent={
-          <Text style={s.empty}>Nenhuma embalagem cadastrada ainda.{'\n'}Adicione caixas, sacos, rótulos e mais.</Text>
+          <View style={s.emptyWrap}>
+            <Text style={s.emptyIcon}>📦</Text>
+            <Text style={s.emptyTitle}>{busca ? 'Nenhum resultado' : 'Nenhuma embalagem ainda'}</Text>
+            <Text style={s.emptySub}>{busca ? `Sem resultados para "${busca}"` : 'Adicione caixas, sacos, rótulos e mais.'}</Text>
+          </View>
         }
         renderItem={({ item }) => {
           const unitario = Number(item.custo) / Number(item.quantidade_embalagem);
@@ -56,7 +87,7 @@ export default function EmbalagensList({ navigation }: any) {
             <View style={s.card}>
               <TouchableOpacity
                 style={s.cardContent}
-                onPress={() => navigation.navigate('EmbalagemForm', { id: item.id })}
+                onPress={() => { Haptics.selectionAsync(); navigation.navigate('EmbalagemForm', { id: item.id }); }}
               >
                 <Text style={s.nome}>{item.nome}</Text>
                 <Text style={s.meta}>
@@ -73,7 +104,7 @@ export default function EmbalagensList({ navigation }: any) {
           );
         }}
       />
-      <TouchableOpacity style={s.fab} onPress={() => navigation.navigate('EmbalagemForm')}>
+      <TouchableOpacity style={s.fab} onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); navigation.navigate('EmbalagemForm'); }}>
         <Text style={s.fabText}>+ Nova Embalagem</Text>
       </TouchableOpacity>
       <ConfirmDialog
@@ -92,7 +123,19 @@ const s = StyleSheet.create({
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.bg },
   list: { padding: space[4], paddingBottom: 90 },
   emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: space[10] },
+  emptyWrap: { alignItems: 'center', paddingHorizontal: 32 },
+  emptyIcon: { fontSize: 56, marginBottom: 16 },
+  emptyTitle: { fontSize: fontSize.md, fontWeight: fontWeight.bold, color: colors.text1, marginBottom: 8, textAlign: 'center' },
+  emptySub: { fontSize: fontSize.sm, color: colors.text2, textAlign: 'center', lineHeight: 22 },
   empty: { color: colors.text2, fontSize: fontSize.base, textAlign: 'center', lineHeight: 24 },
+  searchWrap: { paddingHorizontal: space[4], paddingTop: space[3], paddingBottom: space[2] },
+  search: {
+    backgroundColor: colors.surface, borderRadius: radius.md,
+    borderWidth: 1, borderColor: colors.border,
+    paddingHorizontal: 14, paddingVertical: 10,
+    fontSize: fontSize.base, color: colors.text1,
+    ...shadow.xs,
+  },
   card: {
     backgroundColor: colors.surface, borderRadius: radius.md, marginBottom: space[3],
     flexDirection: 'row', alignItems: 'stretch',
