@@ -1,12 +1,26 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import {
   View, Text, FlatList, TouchableOpacity,
-  StyleSheet, ActivityIndicator,
+  StyleSheet, ActivityIndicator, Linking, Alert,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { supabase } from '../../lib/supabase';
 import type { Pedido } from '../../lib/types';
 import ConfirmDialog from '../../components/ConfirmDialog';
+
+function abrirWhatsApp(telefone: string) {
+  const digitos = telefone.replace(/\D/g, '');
+  // Adiciona código do Brasil (55) se não começar com ele e tiver 10-11 dígitos
+  const numero = digitos.startsWith('55') ? digitos : `55${digitos}`;
+  const url = `whatsapp://send?phone=${numero}`;
+  Linking.canOpenURL(url).then(suportado => {
+    if (suportado) {
+      Linking.openURL(url);
+    } else {
+      Alert.alert('WhatsApp não encontrado', 'O WhatsApp não está instalado neste dispositivo.');
+    }
+  });
+}
 
 export default function ClienteDetalheScreen({ route, navigation }: any) {
   const { clienteId, nome } = route.params as { clienteId: string; nome: string };
@@ -14,9 +28,13 @@ export default function ClienteDetalheScreen({ route, navigation }: any) {
   const [loading, setLoading] = useState(true);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [confirmPagoId, setConfirmPagoId] = useState<Pedido | null>(null);
+  const [telefone, setTelefone] = useState<string | null>(null);
 
   useEffect(() => {
     navigation.setOptions({ title: nome });
+    supabase.from('clientes').select('telefone').eq('id', clienteId).single().then(({ data }) => {
+      if (data) setTelefone(data.telefone ?? null);
+    });
   }, [nome]);
 
   const load = useCallback(async () => {
@@ -73,6 +91,13 @@ export default function ClienteDetalheScreen({ route, navigation }: any) {
           </Text>
         </View>
       </View>
+
+      {telefone ? (
+        <TouchableOpacity style={s.waBanner} onPress={() => abrirWhatsApp(telefone)}>
+          <Text style={s.waBannerTxt}>💬 {telefone}</Text>
+          <Text style={s.waBannerAcao}>Abrir no WhatsApp →</Text>
+        </TouchableOpacity>
+      ) : null}
 
       <FlatList
         data={pedidos}
@@ -155,6 +180,13 @@ const s = StyleSheet.create({
   resumoValor: { fontSize: 15, fontWeight: '800', color: '#fff' },
   corPago: { color: '#A8FFD8' },
   corPendente: { color: '#FFCB8A' },
+  waBanner: {
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+    backgroundColor: '#E7F9EF', borderBottomWidth: 1, borderColor: '#B2DFCA',
+    paddingHorizontal: 16, paddingVertical: 10,
+  },
+  waBannerTxt: { fontSize: 14, color: '#0D2B24', fontWeight: '600' },
+  waBannerAcao: { fontSize: 13, color: '#25D366', fontWeight: '700' },
   list: { padding: 16, paddingBottom: 90 },
   emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 40 },
   empty: { color: '#5A8A7A', fontSize: 15, textAlign: 'center', lineHeight: 24 },

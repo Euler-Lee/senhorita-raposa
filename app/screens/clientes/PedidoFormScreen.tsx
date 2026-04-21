@@ -5,34 +5,55 @@ import {
   Platform, Modal, FlatList,
 } from 'react-native';
 import { supabase } from '../../lib/supabase';
-import type { Produto } from '../../lib/types';
+import type { Produto, Cliente } from '../../lib/types';
 import FoxBackground from '../../components/FoxBackground';
 import FoxSaveToast from '../../components/FoxSaveToast';
 
 export default function PedidoFormScreen({ route, navigation }: any) {
-  const { clienteId, clienteNome } = route.params as { clienteId: string; clienteNome: string };
+  const params = route.params as { clienteId?: string; clienteNome?: string } | undefined;
+  const clienteIdFixo = params?.clienteId;
+  const clienteNomeFixo = params?.clienteNome;
 
   const [descricao, setDescricao] = useState('');
   const [valor, setValor] = useState('');
   const [dataVenc, setDataVenc] = useState('');
   const [produtoSel, setProdutoSel] = useState<Produto | null>(null);
   const [produtos, setProdutos] = useState<Produto[]>([]);
-  const [modalVisible, setModalVisible] = useState(false);
+  const [modalProduto, setModalProduto] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showToast, setShowToast] = useState(false);
 
+  // seleção de cliente (quando não veio fixado pela navegação)
+  const [clientes, setClientes] = useState<Cliente[]>([]);
+  const [clienteSel, setClienteSel] = useState<{ id: string; nome: string } | null>(
+    clienteIdFixo ? { id: clienteIdFixo, nome: clienteNomeFixo ?? '' } : null,
+  );
+  const [modalCliente, setModalCliente] = useState(false);
+  const [buscaCliente, setBuscaCliente] = useState('');
+
   useEffect(() => {
-    navigation.setOptions({ title: `Pedido — ${clienteNome}` });
+    if (clienteIdFixo) {
+      navigation.setOptions({ title: `Pedido — ${clienteNomeFixo}` });
+    } else {
+      navigation.setOptions({ title: 'Novo Pedido' });
+      supabase.from('clientes').select('id, nome').order('nome').then(({ data }) => {
+        setClientes((data as Cliente[]) ?? []);
+      });
+    }
     supabase.from('produtos').select('*').order('nome').then(({ data }) => {
       setProdutos((data as Produto[]) ?? []);
     });
   }, []);
 
+  const clientesFiltrados = clientes.filter(c =>
+    c.nome.toLowerCase().includes(buscaCliente.toLowerCase()),
+  );
+
   function handleSelecionarProduto(p: Produto) {
     setProdutoSel(p);
     setDescricao(p.nome);
     if (p.preco_venda) setValor(String(p.preco_venda));
-    setModalVisible(false);
+    setModalProduto(false);
   }
 
   function formatarDataInput(text: string) {
@@ -50,6 +71,7 @@ export default function PedidoFormScreen({ route, navigation }: any) {
   }
 
   async function handleSave() {
+    if (!clienteSel) { Alert.alert('Erro', 'Selecione um cliente.'); return; }
     if (!descricao.trim()) { Alert.alert('Erro', 'Informe a descrição do pedido.'); return; }
     const valorNum = parseFloat(valor.replace(',', '.'));
     if (!valor || isNaN(valorNum) || valorNum <= 0) { Alert.alert('Erro', 'Informe um valor válido.'); return; }
@@ -62,7 +84,7 @@ export default function PedidoFormScreen({ route, navigation }: any) {
 
     setLoading(true);
     const { error } = await supabase.from('pedidos').insert({
-      cliente_id: clienteId,
+      cliente_id: clienteSel.id,
       produto_id: produtoSel?.id ?? null,
       descricao: descricao.trim(),
       valor: valorNum,
@@ -82,8 +104,25 @@ export default function PedidoFormScreen({ route, navigation }: any) {
         <FoxSaveToast visible={showToast} />
         <ScrollView contentContainerStyle={s.container} keyboardShouldPersistTaps="handled">
 
+          {/* ── Seleção de cliente (quando não vem fixado) ── */}
+          {!clienteIdFixo && (
+            <>
+              <Text style={s.label}>Cliente *</Text>
+              <TouchableOpacity style={s.produtoBtn} onPress={() => setModalCliente(true)}>
+                <Text style={clienteSel ? s.produtoBtnSel : s.produtoBtnPlaceholder}>
+                  {clienteSel ? `👤 ${clienteSel.nome}` : 'Selecionar cliente...'}
+                </Text>
+                {clienteSel && (
+                  <TouchableOpacity onPress={() => setClienteSel(null)}>
+                    <Text style={s.limpar}>✕</Text>
+                  </TouchableOpacity>
+                )}
+              </TouchableOpacity>
+            </>
+          )}
+
           <Text style={s.label}>Vincular a um produto cadastrado (opcional)</Text>
-          <TouchableOpacity style={s.produtoBtn} onPress={() => setModalVisible(true)}>
+          <TouchableOpacity style={s.produtoBtn} onPress={() => setModalProduto(true)}>
             <Text style={produtoSel ? s.produtoBtnSel : s.produtoBtnPlaceholder}>
               {produtoSel ? `🎂 ${produtoSel.nome}` : 'Selecionar produto...'}
             </Text>
@@ -114,7 +153,8 @@ export default function PedidoFormScreen({ route, navigation }: any) {
         </ScrollView>
       </KeyboardAvoidingView>
 
-      <Modal visible={modalVisible} animationType="slide" transparent>
+      {/* Modal produto */}
+      <Modal visible={modalProduto} animationType="slide" transparent>
         <View style={s.modalOverlay}>
           <View style={s.modalContent}>
             <Text style={s.modalTitle}>Selecionar produto</Text>
@@ -134,7 +174,43 @@ export default function PedidoFormScreen({ route, navigation }: any) {
                 </TouchableOpacity>
               )}
             />
-            <TouchableOpacity style={s.cancelBtn} onPress={() => setModalVisible(false)}>
+            <TouchableOpacity style={s.cancelBtn} onPress={() => setModalProduto(false)}>
+              <Text style={s.cancelTxt}>Cancelar</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Modal cliente */}
+      <Modal visible={modalCliente} animationType="slide" transparent>
+        <View style={s.modalOverlay}>
+          <View style={s.modalContent}>
+            <Text style={s.modalTitle}>Selecionar cliente</Text>
+            <TextInput
+              style={[s.input, { marginBottom: 12 }]}
+              value={buscaCliente}
+              onChangeText={setBuscaCliente}
+              placeholder="Buscar cliente..."
+              placeholderTextColor="#7AADA0"
+            />
+            <FlatList
+              data={clientesFiltrados}
+              keyExtractor={c => c.id}
+              style={{ maxHeight: 320 }}
+              ListEmptyComponent={<Text style={s.empty}>Nenhum cliente encontrado.</Text>}
+              renderItem={({ item }) => (
+                <TouchableOpacity style={s.produtoOpt} onPress={() => {
+                  setClienteSel({ id: item.id, nome: item.nome });
+                  setBuscaCliente('');
+                  setModalCliente(false);
+                  navigation.setOptions({ title: `Pedido — ${item.nome}` });
+                }}>
+                  <Text style={s.produtoOptNome}>👤 {item.nome}</Text>
+                  {item.telefone && <Text style={s.produtoOptPreco}>{item.telefone}</Text>}
+                </TouchableOpacity>
+              )}
+            />
+            <TouchableOpacity style={s.cancelBtn} onPress={() => { setBuscaCliente(''); setModalCliente(false); }}>
               <Text style={s.cancelTxt}>Cancelar</Text>
             </TouchableOpacity>
           </View>

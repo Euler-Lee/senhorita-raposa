@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import {
   View, Text, FlatList, TouchableOpacity,
-  StyleSheet, TextInput, RefreshControl,
+  StyleSheet, TextInput, RefreshControl, Linking, Alert,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import * as Haptics from 'expo-haptics';
@@ -10,6 +10,21 @@ import FoxLoader from '../../components/FoxLoader';
 import FoxBackground from '../../components/FoxBackground';
 import ConfirmDialog from '../../components/ConfirmDialog';
 import { colors, fontSize, fontWeight, radius, shadow, space } from '../../lib/theme';
+import type { Cliente } from '../../lib/types';
+
+function abrirWhatsApp(telefone: string) {
+  const digitos = telefone.replace(/\D/g, '');
+  const numero = digitos.startsWith('55') ? digitos : `55${digitos}`;
+  const url = `whatsapp://send?phone=${numero}`;
+  Linking.canOpenURL(url).then(suportado => {
+    if (suportado) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      Linking.openURL(url);
+    } else {
+      Alert.alert('WhatsApp não encontrado', 'O WhatsApp não está instalado neste dispositivo.');
+    }
+  });
+}
 
 export default function ClientesListScreen({ navigation }: any) {
   const [clientes, setClientes] = useState<Cliente[]>([]);
@@ -87,7 +102,11 @@ export default function ClientesListScreen({ navigation }: any) {
               <Text style={styles.avatar}>{item.nome.charAt(0).toUpperCase()}</Text>
               <View style={{ flex: 1 }}>
                 <Text style={styles.nome}>{item.nome}</Text>
-                {item.telefone ? <Text style={styles.tel}>{item.telefone}</Text> : null}
+                {item.telefone ? (
+                  <TouchableOpacity onPress={() => abrirWhatsApp(item.telefone!)}>
+                    <Text style={styles.tel}>💬 {item.telefone}</Text>
+                  </TouchableOpacity>
+                ) : null}
               </View>
             </TouchableOpacity>
             <View style={styles.actions}>
@@ -152,7 +171,7 @@ const styles = StyleSheet.create({
     lineHeight: 40,
   },
   nome: { fontSize: fontSize.base, fontWeight: fontWeight.bold, color: colors.text1 },
-  tel: { fontSize: fontSize.sm, color: colors.text2, marginTop: 2 },
+  tel: { fontSize: fontSize.sm, color: '#1A9B6A', marginTop: 2, fontWeight: '600' },
   actions: { flexDirection: 'column' },
   editBtn: { flex: 1, width: 52, justifyContent: 'center', alignItems: 'center' },
   editBtnInner: {
