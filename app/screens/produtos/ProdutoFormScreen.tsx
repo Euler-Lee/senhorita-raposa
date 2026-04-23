@@ -266,7 +266,7 @@ export default function ProdutoFormScreen({ route, navigation }: any) {
           <TouchableOpacity style={styles.button} onPress={handleSave} disabled={loading}>
             {loading
               ? <ActivityIndicator color="#fff" />
-              : <Text style={styles.buttonText}>{editId ? 'Salvar alterações' : 'Cadastrar produto'}</Text>}
+              : <Text style={styles.buttonText}>{editId ? 'Salvar alterações' : 'Cadastrar receita'}</Text>}
           </TouchableOpacity>
 
         </ScrollView>
