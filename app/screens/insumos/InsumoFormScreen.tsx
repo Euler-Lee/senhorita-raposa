@@ -122,12 +122,9 @@ export default function InsumoFormScreen({ route, navigation }: any) {
 
         {unitarioValido && (
           <View style={styles.preview}>
-            <View style={styles.previewTop}>
-              <Text style={styles.previewLabel}>Custo por {unidade}</Text>
-              <Text style={styles.previewValue}>R$ {formatarCusto(custo / qtd, unidade)}</Text>
-            </View>
-            <Text style={styles.previewHint}>
-              R$ {custo.toFixed(2).replace('.', ',')} ÷ {qtd} {unidade} = R$ {formatarCusto(custo / qtd, unidade)}/{unidade}
+            <Text style={styles.previewLine}>
+              Você paga por cada {unidade}{' '}
+              <Text style={styles.previewLineValue}>R$ {formatarCusto(custo / qtd, unidade)}</Text>
             </Text>
           </View>
         )}
@@ -161,15 +158,11 @@ const styles = StyleSheet.create({
   chipText: { color: '#8A6A5A', fontSize: 14 },
   chipTextSelected: { color: '#fff', fontWeight: '700' },
   preview: {
-    backgroundColor: '#FEF0E8', borderRadius: 12, padding: 16,
-    marginTop: 20, gap: 6,
+    backgroundColor: '#FEF0E8', borderRadius: 12, padding: 14,
+    marginTop: 20,
   },
-  previewTop: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-  },
-  previewLabel: { fontSize: 13, color: '#8A6A5A' },
-  previewValue: { fontSize: 26, fontWeight: '800', color: '#D45C2A' },
-  previewHint: { fontSize: 12, color: '#B08A78' },
+  previewLine: { fontSize: 15, color: '#8A6A5A' },
+  previewLineValue: { fontSize: 15, fontWeight: '800', color: '#D45C2A' },
   button: {
     backgroundColor: '#D45C2A', borderRadius: 12,
     padding: 16, alignItems: 'center', marginTop: 32,

@@ -10,13 +10,28 @@ import FoxBackground from '../../components/FoxBackground';
 import FoxSaveToast from '../../components/FoxSaveToast';
 
 type ItemComposicao = { tipo: 'insumo'; item: Insumo } | { tipo: 'embalagem'; item: Embalagem };
-type ComposicaoLocal = ItemComposicao & { quantidade: string };
+type ComposicaoLocal = ItemComposicao & { quantidade: string; unidadeReceita: string };
 
 function custoUnitario(entry: ItemComposicao): number {
   if (entry.tipo === 'insumo') {
     return Number(entry.item.preco_custo) / Number(entry.item.quantidade_embalagem);
   }
   return Number(entry.item.custo) / Number(entry.item.quantidade_embalagem);
+}
+
+const UNIDADES_COMPATIVEIS: Record<string, string[]> = {
+  g: ['g', 'kg'], kg: ['kg', 'g'],
+  ml: ['ml', 'L'], L: ['L', 'ml'],
+  un: ['un'],
+};
+
+function converterParaBase(qtd: number, unRecipe: string, unBase: string): number {
+  if (unRecipe === unBase) return qtd;
+  if (unRecipe === 'g'  && unBase === 'kg') return qtd / 1000;
+  if (unRecipe === 'kg' && unBase === 'g')  return qtd * 1000;
+  if (unRecipe === 'ml' && unBase === 'L')  return qtd / 1000;
+  if (unRecipe === 'L'  && unBase === 'ml') return qtd * 1000;
+  return qtd;
 }
 
 export default function ProdutoFormScreen({ route, navigation }: any) {
@@ -34,6 +49,7 @@ export default function ProdutoFormScreen({ route, navigation }: any) {
   const [modalAba, setModalAba] = useState<'insumo' | 'embalagem'>('insumo');
   const [itemSelecionado, setItemSelecionado] = useState<ItemComposicao | null>(null);
   const [qtdModal, setQtdModal] = useState('');
+  const [unidadeModal, setUnidadeModal] = useState('');
 
   useEffect(() => {
     navigation.setOptions({ title: editId ? 'Editar Receita' : 'Nova Receita' });
@@ -60,9 +76,9 @@ export default function ProdutoFormScreen({ route, navigation }: any) {
       if (comp) {
         const mapped: ComposicaoLocal[] = comp.map((c: any) => {
           if (c.insumos) {
-            return { tipo: 'insumo', item: c.insumos as Insumo, quantidade: String(c.quantidade_utilizada) };
+            return { tipo: 'insumo', item: c.insumos as Insumo, quantidade: String(c.quantidade_utilizada), unidadeReceita: (c.insumos as Insumo).unidade_medida };
           }
-          return { tipo: 'embalagem', item: c.embalagens as Embalagem, quantidade: String(c.quantidade_utilizada) };
+          return { tipo: 'embalagem', item: c.embalagens as Embalagem, quantidade: String(c.quantidade_utilizada), unidadeReceita: (c.embalagens as Embalagem).unidade_medida };
         });
         setComposicao(mapped);
       }
@@ -73,7 +89,11 @@ export default function ProdutoFormScreen({ route, navigation }: any) {
   function calcularCustoLocal(): number {
     return composicao.reduce((total, entry) => {
       const qtd = parseFloat(entry.quantidade.replace(',', '.'));
-      return total + (isNaN(qtd) ? 0 : custoUnitario(entry) * qtd);
+      if (isNaN(qtd)) return total;
+      const unBase = entry.tipo === 'insumo'
+        ? (entry.item as Insumo).unidade_medida
+        : (entry.item as Embalagem).unidade_medida;
+      return total + custoUnitario(entry) * converterParaBase(qtd, entry.unidadeReceita, unBase);
     }, 0);
   }
 
@@ -85,7 +105,7 @@ export default function ProdutoFormScreen({ route, navigation }: any) {
     setComposicao(prev => {
       const key = `${itemSelecionado.tipo}:${itemSelecionado.item.id}`;
       const idx = prev.findIndex(e => `${e.tipo}:${e.item.id}` === key);
-      const nova: ComposicaoLocal = { ...itemSelecionado, quantidade: String(qtd) };
+      const nova: ComposicaoLocal = { ...itemSelecionado, quantidade: String(qtd), unidadeReceita: unidadeModal };
       if (idx >= 0) {
         const updated = [...prev];
         updated[idx] = nova;
@@ -96,6 +116,7 @@ export default function ProdutoFormScreen({ route, navigation }: any) {
     setModalVisible(false);
     setItemSelecionado(null);
     setQtdModal('');
+    setUnidadeModal('');
   }
 
   async function handleSave() {
@@ -118,12 +139,18 @@ export default function ProdutoFormScreen({ route, navigation }: any) {
 
     await supabase.from('composicao_produto').delete().eq('produto_id', produtoId);
     if (composicao.length > 0) {
-      const rows = composicao.map(entry => ({
-        produto_id: produtoId,
-        insumo_id: entry.tipo === 'insumo' ? entry.item.id : null,
-        embalagem_id: entry.tipo === 'embalagem' ? entry.item.id : null,
-        quantidade_utilizada: parseFloat(entry.quantidade.replace(',', '.')),
-      }));
+      const rows = composicao.map(entry => {
+        const qtd = parseFloat(entry.quantidade.replace(',', '.'));
+        const unBase = entry.tipo === 'insumo'
+          ? (entry.item as Insumo).unidade_medida
+          : (entry.item as Embalagem).unidade_medida;
+        return {
+          produto_id: produtoId,
+          insumo_id: entry.tipo === 'insumo' ? entry.item.id : null,
+          embalagem_id: entry.tipo === 'embalagem' ? entry.item.id : null,
+          quantidade_utilizada: converterParaBase(isNaN(qtd) ? 0 : qtd, entry.unidadeReceita, unBase),
+        };
+      });
       const { error } = await supabase.from('composicao_produto').insert(rows);
       if (error) { Alert.alert('Erro na composição', error.message); setLoading(false); return; }
     }
@@ -139,9 +166,6 @@ export default function ProdutoFormScreen({ route, navigation }: any) {
 
   const custoLocal = calcularCustoLocal();
   const vendaNum = precoVenda ? parseFloat(precoVenda.replace(',', '.')) : null;
-  const unidadeItem = (entry: ComposicaoLocal) =>
-    entry.tipo === 'insumo' ? (entry.item as Insumo).unidade_medida : (entry.item as Embalagem).unidade_medida;
-
   return (
     <>
       <KeyboardAvoidingView style={styles.root} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
@@ -179,16 +203,18 @@ export default function ProdutoFormScreen({ route, navigation }: any) {
             <Text style={styles.emptyComp}>Nenhum item adicionado ainda.</Text>
           ) : (
             composicao.map((entry, index) => {
-              const unit = custoUnitario(entry);
               const qtdNum = parseFloat(entry.quantidade.replace(',', '.'));
-              const subtotal = isNaN(qtdNum) ? 0 : unit * qtdNum;
+              const unBase = entry.tipo === 'insumo'
+                ? (entry.item as Insumo).unidade_medida
+                : (entry.item as Embalagem).unidade_medida;
+              const subtotal = isNaN(qtdNum) ? 0 : custoUnitario(entry) * converterParaBase(qtdNum, entry.unidadeReceita, unBase);
               const tag = entry.tipo === 'embalagem' ? '📦 ' : '';
               return (
                 <View key={`${entry.tipo}:${entry.item.id}`} style={styles.compItem}>
                   <View style={{ flex: 1 }}>
                     <Text style={styles.compNome}>{tag}{entry.item.nome}</Text>
                     <Text style={styles.compMeta}>
-                      {entry.quantidade} {unidadeItem(entry)}  —  R$ {subtotal.toFixed(4)}
+                      {entry.quantidade} {entry.unidadeReceita}  —  R$ {subtotal.toFixed(4)}
                     </Text>
                   </View>
                   <TouchableOpacity
@@ -246,11 +272,29 @@ export default function ProdutoFormScreen({ route, navigation }: any) {
                 <Text style={styles.modalSelected}>
                   {itemSelecionado.tipo === 'embalagem' ? '📦 ' : ''}{itemSelecionado.item.nome}
                 </Text>
-                <Text style={styles.label}>
-                  Quantidade ({itemSelecionado.tipo === 'insumo'
+                {(() => {
+                  const unBase = itemSelecionado.tipo === 'insumo'
                     ? (itemSelecionado.item as Insumo).unidade_medida
-                    : (itemSelecionado.item as Embalagem).unidade_medida})
-                </Text>
+                    : (itemSelecionado.item as Embalagem).unidade_medida;
+                  const alts = UNIDADES_COMPATIVEIS[unBase] ?? [unBase];
+                  return alts.length > 1 ? (
+                    <>
+                      <Text style={[styles.label, { marginTop: 12 }]}>Unidade</Text>
+                      <View style={styles.chips}>
+                        {alts.map(u => (
+                          <TouchableOpacity
+                            key={u}
+                            style={[styles.chip, unidadeModal === u && styles.chipSelected]}
+                            onPress={() => setUnidadeModal(u)}
+                          >
+                            <Text style={[styles.chipText, unidadeModal === u && styles.chipTextSelected]}>{u}</Text>
+                          </TouchableOpacity>
+                        ))}
+                      </View>
+                    </>
+                  ) : null;
+                })()}
+                <Text style={[styles.label, { marginTop: 12 }]}>Quantidade ({unidadeModal})</Text>
                 <TextInput
                   style={styles.input}
                   value={qtdModal}
@@ -263,7 +307,7 @@ export default function ProdutoFormScreen({ route, navigation }: any) {
                 <View style={styles.modalRow}>
                   <TouchableOpacity
                     style={[styles.modalBtn, styles.modalBtnSecondary]}
-                    onPress={() => setItemSelecionado(null)}
+                    onPress={() => { setItemSelecionado(null); setUnidadeModal(''); }}
                   >
                     <Text style={styles.modalBtnSecondaryText}>Voltar</Text>
                   </TouchableOpacity>
@@ -302,7 +346,7 @@ export default function ProdutoFormScreen({ route, navigation }: any) {
                     renderItem={({ item }) => (
                       <TouchableOpacity
                         style={styles.insumoOption}
-                        onPress={() => { setItemSelecionado({ tipo: 'insumo', item }); setQtdModal(''); }}
+                        onPress={() => { setItemSelecionado({ tipo: 'insumo', item }); setUnidadeModal(item.unidade_medida); setQtdModal(''); }}
                       >
                         <Text style={styles.insumoOptionNome}>{item.nome}</Text>
                         <Text style={styles.insumoOptionMeta}>{item.unidade_medida}</Text>
@@ -318,7 +362,7 @@ export default function ProdutoFormScreen({ route, navigation }: any) {
                     renderItem={({ item }) => (
                       <TouchableOpacity
                         style={styles.insumoOption}
-                        onPress={() => { setItemSelecionado({ tipo: 'embalagem', item }); setQtdModal(''); }}
+                        onPress={() => { setItemSelecionado({ tipo: 'embalagem', item }); setUnidadeModal(item.unidade_medida); setQtdModal(''); }}
                       >
                         <Text style={styles.insumoOptionNome}>📦 {item.nome}</Text>
                         <Text style={styles.insumoOptionMeta}>{item.unidade_medida}</Text>
@@ -392,6 +436,11 @@ const styles = StyleSheet.create({
   abaAtiva: { backgroundColor: '#D45C2A' },
   abaTxt: { color: '#8A6A5A', fontWeight: '600', fontSize: 13 },
   abaTxtAtiva: { color: '#fff', fontWeight: '700' },
+  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 4 },
+  chip: { borderWidth: 1.5, borderColor: '#EDD9C8', borderRadius: 20, paddingVertical: 7, paddingHorizontal: 16, backgroundColor: '#fff' },
+  chipSelected: { backgroundColor: '#D45C2A', borderColor: '#D45C2A' },
+  chipText: { color: '#8A6A5A', fontSize: 14 },
+  chipTextSelected: { color: '#fff', fontWeight: '700' },
   insumoOption: { flexDirection: 'row', justifyContent: 'space-between', padding: 14, borderBottomWidth: 1, borderColor: '#EDD9C8' },
   insumoOptionNome: { fontSize: 15, color: '#2D1B10' },
   insumoOptionMeta: { fontSize: 13, color: '#8A6A5A' },
