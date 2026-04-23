@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
-  Alert, ActivityIndicator, ScrollView, KeyboardAvoidingView,
+  ActivityIndicator, ScrollView, KeyboardAvoidingView,
   Platform, Modal, FlatList,
 } from 'react-native';
 import { supabase } from '../../lib/supabase';
 import type { Produto, Cliente } from '../../lib/types';
 import FoxBackground from '../../components/FoxBackground';
 import FoxSaveToast from '../../components/FoxSaveToast';
+import ConfirmDialog from '../../components/ConfirmDialog';
 
 export default function PedidoFormScreen({ route, navigation }: any) {
   const params = route.params as { clienteId?: string; clienteNome?: string } | undefined;
@@ -30,6 +31,7 @@ export default function PedidoFormScreen({ route, navigation }: any) {
   );
   const [modalCliente, setModalCliente] = useState(false);
   const [buscaCliente, setBuscaCliente] = useState('');
+  const [dlg, setDlg] = useState<{ title: string; msg: string } | null>(null);
 
   useEffect(() => {
     if (clienteIdFixo) {
@@ -71,15 +73,15 @@ export default function PedidoFormScreen({ route, navigation }: any) {
   }
 
   async function handleSave() {
-    if (!clienteSel) { Alert.alert('Erro', 'Selecione um cliente.'); return; }
-    if (!descricao.trim()) { Alert.alert('Erro', 'Informe a descrição do pedido.'); return; }
+    if (!clienteSel) { setDlg({ title: 'Cliente não selecionado', msg: 'Selecione um cliente para o pedido.' }); return; }
+    if (!descricao.trim()) { setDlg({ title: 'Descrição obrigatória', msg: 'Informe a descrição do pedido.' }); return; }
     const valorNum = parseFloat(valor.replace(',', '.'));
-    if (!valor || isNaN(valorNum) || valorNum <= 0) { Alert.alert('Erro', 'Informe um valor válido.'); return; }
+    if (!valor || isNaN(valorNum) || valorNum <= 0) { setDlg({ title: 'Valor inválido', msg: 'Informe um valor válido para o pedido.' }); return; }
 
     let dataISO: string | null = null;
     if (dataVenc) {
       dataISO = dataParaISO(dataVenc);
-      if (!dataISO) { Alert.alert('Erro', 'Data inválida. Use o formato DD/MM/AAAA.'); return; }
+      if (!dataISO) { setDlg({ title: 'Data inválida', msg: 'Use o formato DD/MM/AAAA.' }); return; }
     }
 
     setLoading(true);
@@ -92,13 +94,21 @@ export default function PedidoFormScreen({ route, navigation }: any) {
       pago: false,
     });
     setLoading(false);
-    if (error) { Alert.alert('Erro', error.message); return; }
+    if (error) { setDlg({ title: 'Erro ao salvar', msg: error.message }); return; }
     setShowToast(true);
     setTimeout(() => navigation.goBack(), 1500);
   }
 
   return (
     <>
+      <ConfirmDialog
+        visible={!!dlg}
+        title={dlg?.title ?? ''}
+        message={dlg?.msg ?? ''}
+        variant="warning"
+        confirmOnly
+        onConfirm={() => setDlg(null)}
+      />
       <KeyboardAvoidingView style={s.root} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <FoxBackground opacity={0.04} />
         <FoxSaveToast visible={showToast} />

@@ -1,43 +1,60 @@
 import React, { useState } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
-  Alert, ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView,
+  ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView,
 } from 'react-native';
 import { supabase } from '../../lib/supabase';
 import FoxBackground from '../../components/FoxBackground';
+import ConfirmDialog from '../../components/ConfirmDialog';
 import { colors, fontSize, fontWeight, radius, shadow, space } from '../../lib/theme';
 
 export default function SignupScreen({ navigation }: any) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [dlg, setDlg] = useState<{ title: string; msg: string } | null>(null);
+  const [successDlg, setSuccessDlg] = useState(false);
 
   async function handleSignup() {
     if (!email.trim() || !password) {
-      Alert.alert('Campos obrigatórios', 'Preencha todos os campos.');
+      setDlg({ title: 'Campos obrigatórios', msg: 'Preencha todos os campos.' });
       return;
     }
     if (password.length < 6) {
-      Alert.alert('Senha fraca', 'A senha deve ter pelo menos 6 caracteres.');
+      setDlg({ title: 'Senha fraca', msg: 'A senha deve ter pelo menos 6 caracteres.' });
       return;
     }
     setLoading(true);
     const { error } = await supabase.auth.signUp({ email: email.trim(), password });
     setLoading(false);
     if (error) {
-      Alert.alert('Erro ao criar conta', error.message);
+      setDlg({ title: 'Erro ao criar conta', msg: error.message });
       return;
     }
-    Alert.alert(
-      'Conta criada! 🦊',
-      'Verifique seu e-mail para confirmar o cadastro antes de entrar.',
-      [{ text: 'OK', onPress: () => navigation.goBack() }],
-    );
+    setSuccessDlg(true);
   }
 
   return (
-    <KeyboardAvoidingView style={styles.root} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <FoxBackground opacity={0.04} />
+    <>
+      <ConfirmDialog
+        visible={!!dlg}
+        title={dlg?.title ?? ''}
+        message={dlg?.msg ?? ''}
+        variant="warning"
+        confirmOnly
+        onConfirm={() => setDlg(null)}
+      />
+      <ConfirmDialog
+        visible={successDlg}
+        title="Conta criada! 🦊"
+        message="Verifique seu e-mail para confirmar o cadastro antes de entrar."
+        variant="info"
+        confirmOnly
+        confirmLabel="OK"
+        onConfirm={() => { setSuccessDlg(false); navigation.goBack(); }}
+      />
+      <KeyboardAvoidingView style={styles.root} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <FoxBackground opacity={0.04} />
       <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
         <Text style={styles.foxEmoji}>🦊</Text>
         <Text style={styles.title}>Criar Conta</Text>
@@ -72,6 +89,7 @@ export default function SignupScreen({ navigation }: any) {
         </TouchableOpacity>
       </ScrollView>
     </KeyboardAvoidingView>
+    </>
   );
 }
 

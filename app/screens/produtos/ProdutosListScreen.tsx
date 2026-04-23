@@ -129,7 +129,7 @@ export default function ProdutosListScreen({ navigation }: any) {
         }}
       />
       <TouchableOpacity style={styles.fab} onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); navigation.navigate('ProdutoForm'); }}>
-        <Text style={styles.fabText}>+ Novo Produto</Text>
+        <Text style={styles.fabText}>+ Nova Receita</Text>
       </TouchableOpacity>
       <ConfirmDialog
         visible={confirmId !== null}

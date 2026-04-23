@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
-  Alert, ActivityIndicator, ScrollView, KeyboardAvoidingView,
+  ActivityIndicator, ScrollView, KeyboardAvoidingView,
   Platform, Modal, FlatList,
 } from 'react-native';
 import { supabase } from '../../lib/supabase';
 import type { Produto } from '../../lib/types';
 import FoxBackground from '../../components/FoxBackground';
 import FoxSaveToast from '../../components/FoxSaveToast';
+import ConfirmDialog from '../../components/ConfirmDialog';
 
 type Rascunho = {
   key: string;
@@ -34,6 +35,7 @@ export default function ClienteFormScreen({ route, navigation }: any) {
   const [produtos, setProdutos] = useState<Produto[]>([]);
   const [modalIdx, setModalIdx] = useState<number | null>(null);
   const [qtdExistentes, setQtdExistentes] = useState(0);
+  const [dlg, setDlg] = useState<{ title: string; msg: string } | null>(null);
 
   useEffect(() => {
     navigation.setOptions({ title: editId ? 'Editar Cliente' : 'Novo Cliente' });
@@ -69,14 +71,14 @@ export default function ClienteFormScreen({ route, navigation }: any) {
   }
 
   async function handleSave() {
-    if (!nome.trim()) { Alert.alert('Campo obrigatório', 'Informe o nome do cliente.'); return; }
+    if (!nome.trim()) { setDlg({ title: 'Campo obrigatório', msg: 'Informe o nome do cliente.' }); return; }
 
     const validos = rascunhos.filter(r => r.descricao.trim() || r.valor.trim());
     for (const r of validos) {
-      if (!r.descricao.trim()) { Alert.alert('Pedido incompleto', 'Preencha a descrição de todos os pedidos.'); return; }
+      if (!r.descricao.trim()) { setDlg({ title: 'Pedido incompleto', msg: 'Preencha a descrição de todos os pedidos.' }); return; }
       const v = parseFloat(r.valor.replace(',', '.'));
-      if (!r.valor || isNaN(v) || v <= 0) { Alert.alert('Pedido incompleto', 'Informe um valor válido para todos os pedidos.'); return; }
-      if (r.dataVenc && !dataISO(r.dataVenc)) { Alert.alert('Data inválida', 'Use o formato DD/MM/AAAA.'); return; }
+      if (!r.valor || isNaN(v) || v <= 0) { setDlg({ title: 'Pedido incompleto', msg: 'Informe um valor válido para todos os pedidos.' }); return; }
+      if (r.dataVenc && !dataISO(r.dataVenc)) { setDlg({ title: 'Data inválida', msg: 'Use o formato DD/MM/AAAA.' }); return; }
     }
 
     setLoading(true);
@@ -85,10 +87,10 @@ export default function ClienteFormScreen({ route, navigation }: any) {
 
     if (editId) {
       const { error } = await supabase.from('clientes').update(payload).eq('id', editId);
-      if (error) { setLoading(false); Alert.alert('Erro', error.message); return; }
+      if (error) { setLoading(false); setDlg({ title: 'Erro', msg: error.message }); return; }
     } else {
       const { data, error } = await supabase.from('clientes').insert(payload).select().single();
-      if (error || !data) { setLoading(false); Alert.alert('Erro', error?.message ?? 'Erro ao criar cliente.'); return; }
+      if (error || !data) { setLoading(false); setDlg({ title: 'Erro', msg: error?.message ?? 'Erro ao criar cliente.' }); return; }
       clienteId = data.id;
     }
 
@@ -113,6 +115,14 @@ export default function ClienteFormScreen({ route, navigation }: any) {
 
   return (
     <>
+      <ConfirmDialog
+        visible={!!dlg}
+        title={dlg?.title ?? ''}
+        message={dlg?.msg ?? ''}
+        variant="warning"
+        confirmOnly
+        onConfirm={() => setDlg(null)}
+      />
       <KeyboardAvoidingView style={s.root} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <FoxBackground opacity={0.04} />
         <FoxSaveToast visible={showToast} />

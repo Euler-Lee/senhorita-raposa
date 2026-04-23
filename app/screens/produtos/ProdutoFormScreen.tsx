@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
-  Alert, ActivityIndicator, ScrollView, KeyboardAvoidingView,
+  ActivityIndicator, ScrollView, KeyboardAvoidingView,
   Platform, Modal, FlatList,
 } from 'react-native';
 import { supabase } from '../../lib/supabase';
 import type { Insumo, Embalagem } from '../../lib/types';
 import FoxBackground from '../../components/FoxBackground';
 import FoxSaveToast from '../../components/FoxSaveToast';
+import ConfirmDialog from '../../components/ConfirmDialog';
 
 type ItemComposicao = { tipo: 'insumo'; item: Insumo } | { tipo: 'embalagem'; item: Embalagem };
 type ComposicaoLocal = ItemComposicao & { quantidade: string; unidadeReceita: string };
@@ -50,6 +51,7 @@ export default function ProdutoFormScreen({ route, navigation }: any) {
   const [itemSelecionado, setItemSelecionado] = useState<ItemComposicao | null>(null);
   const [qtdModal, setQtdModal] = useState('');
   const [unidadeModal, setUnidadeModal] = useState('');
+  const [dlg, setDlg] = useState<{ title: string; msg: string } | null>(null);
 
   useEffect(() => {
     navigation.setOptions({ title: editId ? 'Editar Receita' : 'Nova Receita' });
@@ -100,7 +102,7 @@ export default function ProdutoFormScreen({ route, navigation }: any) {
   function handleConfirmarItem() {
     if (!itemSelecionado || !qtdModal) return;
     const qtd = parseFloat(qtdModal.replace(',', '.'));
-    if (isNaN(qtd) || qtd <= 0) { Alert.alert('Erro', 'Informe uma quantidade válida.'); return; }
+    if (isNaN(qtd) || qtd <= 0) { setDlg({ title: 'Quantidade inválida', msg: 'Informe um número maior que zero.' }); return; }
 
     setComposicao(prev => {
       const key = `${itemSelecionado.tipo}:${itemSelecionado.item.id}`;
@@ -120,7 +122,7 @@ export default function ProdutoFormScreen({ route, navigation }: any) {
   }
 
   async function handleSave() {
-    if (!nome.trim()) { Alert.alert('Erro', 'Informe o nome do produto.'); return; }
+    if (!nome.trim()) { setDlg({ title: 'Nome obrigatório', msg: 'Informe o nome da receita.' }); return; }
     setLoading(true);
 
     const payload: Record<string, unknown> = { nome: nome.trim() };
@@ -130,10 +132,10 @@ export default function ProdutoFormScreen({ route, navigation }: any) {
 
     if (editId) {
       const { error } = await supabase.from('produtos').update(payload).eq('id', editId);
-      if (error) { Alert.alert('Erro', error.message); setLoading(false); return; }
+      if (error) { setDlg({ title: 'Erro ao salvar', msg: error.message }); setLoading(false); return; }
     } else {
       const { data, error } = await supabase.from('produtos').insert(payload).select('id').single();
-      if (error || !data) { Alert.alert('Erro', error?.message ?? 'Falha ao criar produto.'); setLoading(false); return; }
+      if (error || !data) { setDlg({ title: 'Erro ao criar', msg: error?.message ?? 'Falha ao criar receita.' }); setLoading(false); return; }
       produtoId = data.id;
     }
 
@@ -152,7 +154,7 @@ export default function ProdutoFormScreen({ route, navigation }: any) {
         };
       });
       const { error } = await supabase.from('composicao_produto').insert(rows);
-      if (error) { Alert.alert('Erro na composição', error.message); setLoading(false); return; }
+      if (error) { setDlg({ title: 'Erro na composição', msg: error.message }); setLoading(false); return; }
     }
 
     setLoading(false);
@@ -168,6 +170,14 @@ export default function ProdutoFormScreen({ route, navigation }: any) {
   const vendaNum = precoVenda ? parseFloat(precoVenda.replace(',', '.')) : null;
   return (
     <>
+      <ConfirmDialog
+        visible={!!dlg}
+        title={dlg?.title ?? ''}
+        message={dlg?.msg ?? ''}
+        variant="warning"
+        confirmOnly
+        onConfirm={() => setDlg(null)}
+      />
       <KeyboardAvoidingView style={styles.root} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <FoxBackground opacity={0.04} />
         <FoxSaveToast visible={showToast} />

@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
-  Alert, ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView,
+  ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView,
 } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
 import { makeRedirectUri } from 'expo-auth-session';
 import { supabase } from '../../lib/supabase';
 import FoxBackground from '../../components/FoxBackground';
+import ConfirmDialog from '../../components/ConfirmDialog';
 import { colors, fontSize, fontWeight, radius, shadow, space } from '../../lib/theme';
 
 WebBrowser.maybeCompleteAuthSession();
@@ -16,10 +17,11 @@ export default function LoginScreen({ navigation }: any) {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [loadingGoogle, setLoadingGoogle] = useState(false);
+  const [dlg, setDlg] = useState<{ title: string; msg: string } | null>(null);
 
   async function handleLogin() {
     if (!email.trim() || !password) {
-      Alert.alert('Campos obrigatórios', 'Preencha e-mail e senha.');
+      setDlg({ title: 'Campos obrigatórios', msg: 'Preencha e-mail e senha.' });
       return;
     }
     setLoading(true);
@@ -27,11 +29,11 @@ export default function LoginScreen({ navigation }: any) {
     setLoading(false);
     if (error) {
       if (error.message.includes('Email not confirmed')) {
-        Alert.alert('E-mail não confirmado', 'Verifique sua caixa de entrada e clique no link de confirmação antes de entrar.');
+        setDlg({ title: 'E-mail não confirmado', msg: 'Verifique sua caixa de entrada e clique no link de confirmação antes de entrar.' });
       } else if (error.message.includes('Invalid login credentials')) {
-        Alert.alert('Credenciais inválidas', 'E-mail ou senha incorretos.');
+        setDlg({ title: 'Credenciais inválidas', msg: 'E-mail ou senha incorretos.' });
       } else {
-        Alert.alert('Erro ao entrar', error.message);
+        setDlg({ title: 'Erro ao entrar', msg: error.message });
       }
     }
   }
@@ -44,7 +46,7 @@ export default function LoginScreen({ navigation }: any) {
       options: { redirectTo, skipBrowserRedirect: true },
     });
     if (error || !data.url) {
-      Alert.alert('Erro', 'Não foi possível iniciar o login com Google.');
+      setDlg({ title: 'Erro', msg: 'Não foi possível iniciar o login com Google.' });
       setLoadingGoogle(false);
       return;
     }
@@ -66,8 +68,17 @@ export default function LoginScreen({ navigation }: any) {
   const busy = loading || loadingGoogle;
 
   return (
-    <KeyboardAvoidingView style={styles.root} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <FoxBackground opacity={0.04} />
+    <>
+      <ConfirmDialog
+        visible={!!dlg}
+        title={dlg?.title ?? ''}
+        message={dlg?.msg ?? ''}
+        variant="warning"
+        confirmOnly
+        onConfirm={() => setDlg(null)}
+      />
+      <KeyboardAvoidingView style={styles.root} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <FoxBackground opacity={0.04} />
       <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
         <Text style={styles.foxEmoji}>🦊</Text>
         <Text style={styles.brand}>Senhorita Raposa</Text>
@@ -119,6 +130,7 @@ export default function LoginScreen({ navigation }: any) {
         </TouchableOpacity>
       </ScrollView>
     </KeyboardAvoidingView>
+    </>
   );
 }
 

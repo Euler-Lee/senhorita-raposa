@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import {
   View, Text, StyleSheet, ActivityIndicator,
-  ScrollView, TextInput, TouchableOpacity, Alert,
+  ScrollView, TextInput, TouchableOpacity,
 } from 'react-native';
 import { calcularCustoPorProdutoId, calcularPrecoSugerido } from '../lib/calculos';
 import { supabase } from '../lib/supabase';
 import type { ProdutoComCusto } from '../lib/types';
+import ConfirmDialog from '../components/ConfirmDialog';
 
 const MARGENS_RAPIDAS = ['20', '30', '40', '50', '60'];
 
@@ -15,6 +16,8 @@ export default function PrecificacaoScreen({ route, navigation }: any) {
   const [loading, setLoading] = useState(true);
   const [margemDesejada, setMargemDesejada] = useState('30');
   const [saving, setSaving] = useState(false);
+  const [dlg, setDlg] = useState<{ title: string; msg: string } | null>(null);
+  const [okDlg, setOkDlg] = useState<string | null>(null);
 
   useEffect(() => {
     calcularCustoPorProdutoId(produtoId).then(data => {
@@ -42,14 +45,30 @@ export default function PrecificacaoScreen({ route, navigation }: any) {
       .update({ preco_venda: precoSugerido, margem_lucro: margem })
       .eq('id', produtoId);
     setSaving(false);
-    if (error) { Alert.alert('Erro', error.message); return; }
-    Alert.alert('Preco salvo', `Preco de venda atualizado para R$ ${precoSugerido.toFixed(2)}`, [
-      { text: 'OK', onPress: () => navigation.goBack() },
-    ]);
+    if (error) { setDlg({ title: 'Erro ao salvar', msg: error.message }); return; }
+    setOkDlg(`Preço de venda atualizado para R$ ${precoSugerido.toFixed(2)}`);
   }
 
   return (
-    <ScrollView style={styles.root} contentContainerStyle={styles.container}>
+    <>
+      <ConfirmDialog
+        visible={!!dlg}
+        title={dlg?.title ?? ''}
+        message={dlg?.msg ?? ''}
+        variant="warning"
+        confirmOnly
+        onConfirm={() => setDlg(null)}
+      />
+      <ConfirmDialog
+        visible={!!okDlg}
+        title="Preço salvo! 🦊"
+        message={okDlg ?? ''}
+        variant="info"
+        confirmOnly
+        confirmLabel="OK"
+        onConfirm={() => { setOkDlg(null); navigation.goBack(); }}
+      />
+      <ScrollView style={styles.root} contentContainerStyle={styles.container}>
       <Text style={styles.title}>{produto.nome}</Text>
 
       {/* Situacao atual */}
@@ -113,6 +132,7 @@ export default function PrecificacaoScreen({ route, navigation }: any) {
         </TouchableOpacity>
       </View>
     </ScrollView>
+    </> 
   );
 }
 

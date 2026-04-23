@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View, Text, TouchableOpacity, StyleSheet,
   ScrollView, StatusBar, useWindowDimensions,
@@ -8,6 +8,7 @@ import { TabActions } from '@react-navigation/native';
 import { supabase } from '../lib/supabase';
 import FoxBackground from '../components/FoxBackground';
 import AnimatedPressable from '../components/AnimatedPressable';
+import ConfirmDialog from '../components/ConfirmDialog';
 import { colors } from '../lib/theme';
 
 const MODULES = [
@@ -68,8 +69,20 @@ export default function HomeScreen({ navigation }: any) {
   const HPAD = 20;
   const GAP = 12;
   const cardW = Math.floor((width - HPAD * 2 - GAP) / 2);
+  const [showLogout, setShowLogout] = useState(false);
 
   return (
+    <>
+    <ConfirmDialog
+      visible={showLogout}
+      title="Sair do app"
+      message="Tem certeza que deseja encerrar sua sessão?"
+      variant="warning"
+      confirmLabel="Sair"
+      cancelLabel="Cancelar"
+      onConfirm={() => { setShowLogout(false); supabase.auth.signOut(); }}
+      onCancel={() => setShowLogout(false)}
+    />
     <SafeAreaView style={s.safe} edges={['top']}>
       <StatusBar barStyle="dark-content" backgroundColor={colors.bg} />
       <FoxBackground opacity={0.028} />
@@ -84,7 +97,7 @@ export default function HomeScreen({ navigation }: any) {
           </View>
           <TouchableOpacity
             style={s.logoutBtn}
-            onPress={() => supabase.auth.signOut()}
+            onPress={() => setShowLogout(true)}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
             <Text style={s.logoutTxt}>Sair</Text>
@@ -120,6 +133,7 @@ export default function HomeScreen({ navigation }: any) {
         <Text style={s.footer}>🦊 Senhorita Raposa v1.0</Text>
       </ScrollView>
     </SafeAreaView>
+    </>  
   );
 }
 

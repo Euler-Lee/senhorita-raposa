@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
-  Alert, ActivityIndicator, ScrollView, KeyboardAvoidingView, Platform,
+  ActivityIndicator, ScrollView, KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { supabase } from '../../lib/supabase';
 import FoxBackground from '../../components/FoxBackground';
 import FoxSaveToast from '../../components/FoxSaveToast';
+import ConfirmDialog from '../../components/ConfirmDialog';
 
 const UNIDADES = ['g', 'kg', 'ml', 'L', 'un'];
 
@@ -27,6 +28,7 @@ export default function InsumoFormScreen({ route, navigation }: any) {
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(!!editId);
   const [showToast, setShowToast] = useState(false);
+  const [dlg, setDlg] = useState<{ title: string; msg: string } | null>(null);
 
   useEffect(() => {
     navigation.setOptions({ title: editId ? 'Editar Ingrediente' : 'Novo Ingrediente' });
@@ -44,13 +46,13 @@ export default function InsumoFormScreen({ route, navigation }: any) {
 
   async function handleSave() {
     if (!nome.trim() || !precoCusto || !qtdEmbalagem) {
-      Alert.alert('Campos obrigatorios', 'Preencha todos os campos.');
+      setDlg({ title: 'Campos obrigatórios', msg: 'Preencha o nome, preço e quantidade da embalagem.' });
       return;
     }
     const custo = parseFloat(precoCusto.replace(',', '.'));
     const qtd = parseFloat(qtdEmbalagem.replace(',', '.'));
-    if (isNaN(custo) || custo <= 0) { Alert.alert('Erro', 'Preco de custo invalido.'); return; }
-    if (isNaN(qtd) || qtd <= 0) { Alert.alert('Erro', 'Quantidade invalida.'); return; }
+    if (isNaN(custo) || custo <= 0) { setDlg({ title: 'Valor inválido', msg: 'Informe um preço de custo válido.' }); return; }
+    if (isNaN(qtd) || qtd <= 0) { setDlg({ title: 'Quantidade inválida', msg: 'Informe uma quantidade válida para a embalagem.' }); return; }
 
     setLoading(true);
     const payload = { nome: nome.trim(), unidade_medida: unidade, preco_custo: custo, quantidade_embalagem: qtd };
@@ -59,7 +61,7 @@ export default function InsumoFormScreen({ route, navigation }: any) {
       : await supabase.from('insumos').insert(payload);
     setLoading(false);
 
-    if (error) { Alert.alert('Erro ao salvar', error.message); return; }
+    if (error) { setDlg({ title: 'Erro ao salvar', msg: error.message }); return; }
     setShowToast(true);
     setTimeout(() => navigation.goBack(), 1500);
   }
@@ -76,6 +78,14 @@ export default function InsumoFormScreen({ route, navigation }: any) {
     <KeyboardAvoidingView style={styles.root} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <FoxBackground opacity={0.04} />
       <FoxSaveToast visible={showToast} />
+      <ConfirmDialog
+        visible={!!dlg}
+        title={dlg?.title ?? ''}
+        message={dlg?.msg ?? ''}
+        variant="warning"
+        confirmOnly
+        onConfirm={() => setDlg(null)}
+      />
       <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
 
         <Text style={styles.label}>Nome</Text>

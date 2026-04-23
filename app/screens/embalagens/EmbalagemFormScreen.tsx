@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
-  Alert, ActivityIndicator, ScrollView, KeyboardAvoidingView, Platform,
+  ActivityIndicator, ScrollView, KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { supabase } from '../../lib/supabase';
 import FoxSaveToast from '../../components/FoxSaveToast';
 import FoxBackground from '../../components/FoxBackground';
+import ConfirmDialog from '../../components/ConfirmDialog';
 
 const UNIDADES = ['un', 'm', 'cm', 'kg', 'g', 'rolo'];
 
@@ -24,6 +25,7 @@ export default function EmbalagemFormScreen({ route, navigation }: any) {
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(!!editId);
   const [showToast, setShowToast] = useState(false);
+  const [dlg, setDlg] = useState<{ title: string; msg: string } | null>(null);
 
   useEffect(() => {
     navigation.setOptions({ title: editId ? 'Editar Embalagem' : 'Nova Embalagem' });
@@ -40,11 +42,11 @@ export default function EmbalagemFormScreen({ route, navigation }: any) {
   }, [editId]);
 
   async function handleSave() {
-    if (!nome.trim() || !custo || !qtd) { Alert.alert('Campos obrigatórios', 'Preencha todos os campos.'); return; }
+    if (!nome.trim() || !custo || !qtd) { setDlg({ title: 'Campos obrigatórios', msg: 'Preencha nome, custo e quantidade.' }); return; }
     const custoNum = parseFloat(custo.replace(',', '.'));
     const qtdNum = parseFloat(qtd.replace(',', '.'));
-    if (isNaN(custoNum) || custoNum <= 0) { Alert.alert('Erro', 'Custo inválido.'); return; }
-    if (isNaN(qtdNum) || qtdNum <= 0) { Alert.alert('Erro', 'Quantidade inválida.'); return; }
+    if (isNaN(custoNum) || custoNum <= 0) { setDlg({ title: 'Custo inválido', msg: 'Informe um valor de custo válido.' }); return; }
+    if (isNaN(qtdNum) || qtdNum <= 0) { setDlg({ title: 'Quantidade inválida', msg: 'Informe uma quantidade válida.' }); return; }
 
     setLoading(true);
     const payload = { nome: nome.trim(), unidade_medida: unidade, custo: custoNum, quantidade_embalagem: qtdNum };
@@ -53,7 +55,7 @@ export default function EmbalagemFormScreen({ route, navigation }: any) {
       : await supabase.from('embalagens').insert(payload);
     setLoading(false);
 
-    if (error) { Alert.alert('Erro ao salvar', error.message); return; }
+    if (error) { setDlg({ title: 'Erro ao salvar', msg: error.message }); return; }
     setShowToast(true);
     setTimeout(() => navigation.goBack(), 1500);
   }
@@ -67,6 +69,14 @@ export default function EmbalagemFormScreen({ route, navigation }: any) {
   return (
     <KeyboardAvoidingView style={s.root} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <FoxBackground opacity={0.04} />
+      <ConfirmDialog
+        visible={!!dlg}
+        title={dlg?.title ?? ''}
+        message={dlg?.msg ?? ''}
+        variant="warning"
+        confirmOnly
+        onConfirm={() => setDlg(null)}
+      />
       <ScrollView contentContainerStyle={s.container} keyboardShouldPersistTaps="handled">
 
         <Text style={s.label}>Nome da embalagem</Text>
