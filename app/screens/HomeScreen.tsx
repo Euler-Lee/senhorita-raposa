@@ -34,7 +34,7 @@ const MODULES = [
   {
     key: 'produtos',
     icon: '🍳',
-    label: 'Produtos',
+    label: 'Receitas',
     desc: 'Fichas técnicas e precificação',
     accent: '#9C4A1A',
     bg: '#FDE8D8',

@@ -72,8 +72,8 @@ function EmbalagenNavigator() {
 function ProdutosNavigator() {
   return (
     <ProdutosStack.Navigator screenOptions={HEADER}>
-      <ProdutosStack.Screen name="ProdutosList" component={ProdutosListScreen} options={{ title: 'Produtos' }} />
-      <ProdutosStack.Screen name="ProdutoForm" component={ProdutoFormScreen} options={{ title: 'Novo Produto' }} />
+      <ProdutosStack.Screen name="ProdutosList" component={ProdutosListScreen} options={{ title: 'Receitas' }} />
+      <ProdutosStack.Screen name="ProdutoForm" component={ProdutoFormScreen} options={{ title: 'Nova Receita' }} />
       <ProdutosStack.Screen name="Precificacao" component={PrecificacaoScreen} options={{ title: 'Precificacao' }} />
     </ProdutosStack.Navigator>
   );
@@ -154,7 +154,7 @@ function AppTabs() {
         name="ProdutosTab"
         component={ProdutosNavigator}
         options={{
-          title: 'Produtos',
+          title: 'Receitas',
           tabBarIcon: ({ focused }) => (
             <Text style={{ fontSize: 20, opacity: focused ? 1 : 0.6 }}>🍳</Text>
           ),

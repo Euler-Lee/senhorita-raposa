@@ -36,7 +36,7 @@ export default function ProdutoFormScreen({ route, navigation }: any) {
   const [qtdModal, setQtdModal] = useState('');
 
   useEffect(() => {
-    navigation.setOptions({ title: editId ? 'Editar Produto' : 'Novo Produto' });
+    navigation.setOptions({ title: editId ? 'Editar Receita' : 'Nova Receita' });
     loadData();
   }, [editId]);
 
